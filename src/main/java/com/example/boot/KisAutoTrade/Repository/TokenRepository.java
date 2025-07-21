@@ -12,5 +12,5 @@ import java.util.Optional;
 public interface TokenRepository extends JpaRepository<Token, Long> {
 
     @Transactional(readOnly = true)
-    Optional<Token> findTopByOrderByIdDesc();
+    Optional<Token> findTopByTypeOrderByIdDesc(String type);
 }

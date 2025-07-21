@@ -5,6 +5,7 @@ import com.example.boot.KisAutoTrade.Repository.TokenRepository;
 import com.example.boot.KisAutoTrade.Service.ConnectionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,9 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class TokenHolder {
+
+    @Value("${spring.profiles.active}")
+    private String profile;
 
     private Token cachedToken;
     private final ConnectionService connectionService;
@@ -35,9 +39,9 @@ public class TokenHolder {
             log.info("Cached Token is valid.");
             return cachedToken.getAccessToken();
         }
-
+        log.info("profile@@@@@@@@@@@@@@@@@@@ {}", profile);
         // 캐시에 저장되어 있는 토큰이 없는 경우 DB에서 가장 최근 토큰 조회
-        Optional<Token> optionalToken = tokenRepository.findTopByOrderByIdDesc();
+        Optional<Token> optionalToken = tokenRepository.findTopByTypeOrderByIdDesc(profile);
 
         // 발급된 토큰이 존재하고, 유효한 경우.
         if ( optionalToken.isPresent() && isValid(optionalToken.get()) ) {
@@ -50,7 +54,7 @@ public class TokenHolder {
         try {
             log.info("Token expired or not found, fetching new token...");
             String newToken = connectionService.getNewAccessToken();
-            cachedToken = tokenRepository.findTopByOrderByIdDesc().orElseThrow();
+            cachedToken = tokenRepository.findTopByTypeOrderByIdDesc(profile).orElseThrow();
             return newToken;
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

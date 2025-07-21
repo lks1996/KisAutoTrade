@@ -27,6 +27,8 @@ public class DomesticStockService {
     private String APP_SECRET;
     @Value("${hantuOpenapi.domain}")
     private String DOMAIN;
+    @Value("${hantuOpenapi.cano}")
+    private String CANO;
 
     // 주식잔고조회_국내주식
     private final String urlBalance = "/uapi/domestic-stock/v1/trading/inquire-balance";
@@ -44,11 +46,12 @@ public class DomesticStockService {
         headers.set("authorization", "Bearer " + tokenHolder.getAccessToken());
         headers.set("appkey", APP_KEY);
         headers.set("appsecret", APP_SECRET);
-        headers.set("tr_id", "VTTC8434R");
+        headers.set("tr_id", "VTTC8434R");    // 모의용
+//        headers.set("tr_id", "TTTC8434R");  // 실전용
 
-        // 국내주식기간별시세(일/주/월/년)[v1_국내주식-016]
+        // 주식잔고조회[v1_국내주식-006]
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(DOMAIN + urlBalance)
-                .queryParam("CANO", "99969991")// 종합계좌번호
+                .queryParam("CANO", CANO)// 종합계좌번호
                 .queryParam("ACNT_PRDT_CD", "") // 계좌상품코드
                 .queryParam("AFHR_FLPR_YN", "N") // 시간외단일가, 거래소여부
                 .queryParam("OFL_YN", "") // 오프라인여부

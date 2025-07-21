@@ -21,6 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ConnectionService {
 
+    @Value("${spring.profiles.active}")
+    private String profile;
     @Value("${hantuOpenapi.appkey}")
     private String APP_KEY;
     @Value("${hantuOpenapi.appsecret}")
@@ -57,7 +59,7 @@ public class ConnectionService {
         ResponseEntity<TokenRes> response = restTemplate.exchange(URL, HttpMethod.POST, requestMessage, TokenRes.class);
         log.info("Response body: {}", response.getBody());
 
-        Token token = tokenMapper.toToken(response.getBody());
+        Token token = tokenMapper.toToken(response.getBody(), profile);
 
         tokenRepository.save(token);
 

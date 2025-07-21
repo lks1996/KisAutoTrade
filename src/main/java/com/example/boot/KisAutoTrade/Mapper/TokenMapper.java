@@ -8,10 +8,11 @@ import java.time.LocalDateTime;
 
 @Component
 public class TokenMapper {
-    public Token toToken(TokenRes tokenRes) {
+    public Token toToken(TokenRes tokenRes, String type) {
         return Token.builder()
                 .accessToken(tokenRes.accessToken())
                 .expiration(tokenRes.accessTokenTokenExpired())
+                .type(type)
                 .build();
     }
 }
