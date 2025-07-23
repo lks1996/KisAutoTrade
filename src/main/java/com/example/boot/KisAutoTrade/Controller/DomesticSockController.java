@@ -1,5 +1,6 @@
 package com.example.boot.KisAutoTrade.Controller;
 
+import com.example.boot.KisAutoTrade.DTO.OrderStock;
 import com.example.boot.KisAutoTrade.Service.DomesticStockService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +21,25 @@ public class DomesticSockController {
 
     /**
      * 국내주식 잔고 조회
-     * @throws JsonProcessingException
      */
     @GetMapping("/balance")
-    public void requestAccessToken() throws JsonProcessingException {
+    public void getDomesticStockBalance() {
         domesticStockService.getBalance();
+    }
+
+    /**
+     * 국내주식현재가 시세
+     */
+    @GetMapping("/inquirePrice")
+    public void getDomesticStockPrice(OrderStock orderStock) {
+        domesticStockService.getDomesticStockPrice(orderStock);
+    }
+
+    /**
+     * 국내주식주문(현금)
+     */
+    @GetMapping("/order")
+    public void orderDomesticStockCash(OrderStock orderStock) throws JsonProcessingException {
+        domesticStockService.orderDomesticStockCash(orderStock);
     }
 }
