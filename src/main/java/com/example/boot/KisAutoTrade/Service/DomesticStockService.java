@@ -1,6 +1,6 @@
 package com.example.boot.KisAutoTrade.Service;
 
-import com.example.boot.KisAutoTrade.DTO.OrderStock;
+import com.example.boot.KisAutoTrade.DTO.StockDto;
 import com.example.boot.KisAutoTrade.Token.RequireValidToken;
 import com.example.boot.KisAutoTrade.Token.TokenHolder;
 
@@ -36,6 +36,8 @@ public class DomesticStockService {
     private String DOMAIN;
     @Value("${hantuOpenapi.cano}")
     private String CANO;
+    @Value("${hantuOpenapi.acntprdtcd}")
+    private String ACNT_PRDT_CD;
 
     // 주식잔고조회_국내주식
     private final String urlBalance = "/uapi/domestic-stock/v1/trading/inquire-balance";
@@ -60,7 +62,7 @@ public class DomesticStockService {
      *국내주식잔고조회
      */
     @RequireValidToken
-    public void getBalance() {
+    public void getBalance(StockDto stockDto) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = getHttpHeaders();
 
@@ -72,17 +74,17 @@ public class DomesticStockService {
 
         // 주식잔고조회[v1_국내주식-006]
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(DOMAIN + urlBalance)
-                .queryParam("CANO", CANO)                   // 종합계좌번호
-                .queryParam("ACNT_PRDT_CD", "01")           // 계좌상품코드
-                .queryParam("AFHR_FLPR_YN", "N")            // 시간외단일가, 거래소여부
-                .queryParam("OFL_YN", "")                   // 오프라인여부
-                .queryParam("INQR_DVSN", "01")              // 조회구분
-                .queryParam("UNPR_DVSN", "01")              // 단가구분
-                .queryParam("FUND_STTL_ICLD_YN", "Y")       // 펀드결제분포함여부
-                .queryParam("FNCG_AMT_AUTO_RDPT_YN", "N")   // 융자금액자동상환여부
-                .queryParam("PRCS_DVSN", "00")              // 처리구분
-                .queryParam("CTX_AREA_FK100", "")           // 연속조회검색조건 100
-                .queryParam("CTX_AREA_NK100", "");          // 연속조회키 100
+                .queryParam("CANO", CANO)                                               // 종합계좌번호
+                .queryParam("ACNT_PRDT_CD", ACNT_PRDT_CD)                               // 계좌상품코드
+                .queryParam("AFHR_FLPR_YN", stockDto.getAfhrFlprYn())                   // 시간외단일가, 거래소여부
+                .queryParam("OFL_YN", stockDto.getOflYn())                              // 오프라인여부
+                .queryParam("INQR_DVSN", stockDto.getInorDvsn())                        // 조회구분
+                .queryParam("UNPR_DVSN", stockDto.getUnprDvsn())                        // 단가구분
+                .queryParam("FUND_STTL_ICLD_YN", stockDto.getFundSttlIcldYn())          // 펀드결제분포함여부
+                .queryParam("FNCG_AMT_AUTO_RDPT_YN", stockDto.getFncgAmtAutoRdptYn())   // 융자금액자동상환여부
+                .queryParam("PRCS_DVSN", stockDto.getPrcsDvsn())                        // 처리구분
+                .queryParam("CTX_AREA_FK100", stockDto.getCtxAreaFk100())               // 연속조회검색조건 100
+                .queryParam("CTX_AREA_NK100", stockDto.getCtxAreaNk100());              // 연속조회키 100
 
         HttpEntity<?> entity = new HttpEntity<>(headers);
 
@@ -100,7 +102,7 @@ public class DomesticStockService {
      * 국내주식현재가 시세
      */
     @RequireValidToken
-    public void getDomesticStockPrice(OrderStock orderStock) {
+    public void getDomesticStockPrice(StockDto orderStock) {
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = getHttpHeaders();
@@ -114,14 +116,14 @@ public class DomesticStockService {
 
         // 주식현재가 시세[v1_국내주식-008]
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(DOMAIN + urlInquirePrice)
-                .queryParam("FID_COND_MRKT_DIV_CODE", "UN")          // 조건 시장 분류 코드( J:KRX, NX:NXT, UN:통합 )
-                .queryParam("FID_INPUT_ISCD", "005930");             // 입력 종목코드 (ex 005930 삼성전자)
+                .queryParam("FID_COND_MRKT_DIV_CODE", orderStock.getFidCondMrktDivCode())   // 조건 시장 분류 코드( J:KRX, NX:NXT, UN:통합 )
+                .queryParam("FID_INPUT_ISCD", orderStock.getFidInputIscd());                // 입력 종목코드 (ex 005930 삼성전자)
 
         HttpEntity<?> entity = new HttpEntity<>(headers);
 
         log.info("==========================================");
-        log.info(" 조건 시장 분류 코드: {}");
-        log.info(" 입력 종목코드: {}");
+        log.info(" 조건 시장 분류 코드: {}", orderStock.getFidCondMrktDivCode());
+        log.info(" 입력 종목코드: {}", orderStock.getFidInputIscd());
         log.info("==========================================");
 
         ResponseEntity<String> response = restTemplate.exchange(
@@ -138,7 +140,7 @@ public class DomesticStockService {
      * 국내주식주문(현금)
      */
     @RequireValidToken
-    public void orderDomesticStockCash(OrderStock orderStock) throws JsonProcessingException {
+    public void orderDomesticStockCash(StockDto orderStock) throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
         ObjectMapper objectMapper = new ObjectMapper();
         HttpHeaders headers = getHttpHeaders();
@@ -161,11 +163,11 @@ public class DomesticStockService {
         // 주식주문(현금)[v1_국내주식-001]
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("CANO", CANO);
-        requestBody.put("ACNT_PRDT_CD", "01");
-        requestBody.put("PDNO", orderStock.getPdno());
-        requestBody.put("ORD_DVSN", "00");
-        requestBody.put("ORD_QTY", orderStock.getOrdQty());
-        requestBody.put("ORD_UNPR", orderStock.getOrdUnpr());
+        requestBody.put("ACNT_PRDT_CD", ACNT_PRDT_CD);
+        requestBody.put("PDNO", orderStock.getPdno());          // 종목코드
+        requestBody.put("ORD_DVSN", orderStock.getOrdDvsn());   // 주문구분
+        requestBody.put("ORD_QTY", orderStock.getOrdQty());     // 주문수량
+        requestBody.put("ORD_UNPR", orderStock.getOrdUnpr());   // 주문단가
 
 
         String jsonBody = objectMapper.writeValueAsString(requestBody);
