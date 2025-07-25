@@ -22,6 +22,6 @@ public class SheetDataImportController {
      */
     @GetMapping("/dataImport")
     public void getDomesticStockBalance() throws Exception{
-        sheetDataImportService.getSheetsValue();
+        sheetDataImportService.getSheetsData();
     }
 }

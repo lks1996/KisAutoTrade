@@ -44,44 +44,16 @@ public class SheetDataImportService {
                 .build();
     }
 
-    public void getSheetsValue() throws Exception {
+    public List<List<Object>> getSheetsData() throws Exception {
         String spreadsheetId = SHEET_ID;
-        String range = SHEET_RANGE; // A열: 종목코드, B열: 목표 비율
+        String range = SHEET_RANGE;
 
         Sheets service = getSheets();
         ValueRange response = service.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute();
 
-        List<List<Object>> rows = response.getValues();
-        List<SheetDto> sheetList = new ArrayList<>();
-
-        for (int i = 1; i < rows.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
-            List<Object> row = rows.get(i);
-
-            String accountType = row.size() > 0 ? row.get(0).toString() : "";
-            String stockType1 = row.size() > 1 ? row.get(1).toString() : "";
-            String stockType2 = row.size() > 2 ? row.get(2).toString() : "";
-            String stockCode = row.size() > 3 ? row.get(3).toString() : "";
-            String stockName = row.size() > 4 ? row.get(4).toString() : "";
-            double categoryTargetRatio = row.size() > 5 ? Double.parseDouble(row.get(5).toString()) : 0;
-            double targetRatio = row.size() > 6 ? Double.parseDouble(row.get(6).toString()) : 0;
-
-            SheetDto dto = new SheetDto(accountType, stockType1, stockType2, stockCode,  stockName, categoryTargetRatio, targetRatio);
-            sheetList.add(dto);
-        }
-
-        for (SheetDto row : sheetList) {
-
-
-
-            String accType = row.getAccountType();
-            String stockType1 = row.getStockType1();
-            String stockType2 = row.getStockType2();
-            String stockCode = row.getStockCode();
-            String stockName = row.getStockName();
-            System.out.println(accType + " => " + stockType1 + " => " + stockType2 + " => " + stockCode + " => " + stockName);
-        }
+        return response.getValues();
     }
 
 }
