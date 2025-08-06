@@ -5,6 +5,7 @@ import com.example.boot.KisAutoTrade.Token.RequireValidToken;
 import com.example.boot.KisAutoTrade.Token.TokenHolder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ public class DomesticStockService {
     private final TokenHolder tokenHolder;
 
     public DomesticStockService(TokenHolder tokenHolder) {
+
         this.tokenHolder = tokenHolder;
     }
 
@@ -59,10 +61,12 @@ public class DomesticStockService {
     }
 
     /**
-     *국내주식잔고조회
+     * 국내주식잔고조회
+     *
+     * @return
      */
     @RequireValidToken
-    public void getBalance(StockDto stockDto) {
+    public String getBalance(StockDto stockDto) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = getHttpHeaders();
 
@@ -96,6 +100,8 @@ public class DomesticStockService {
 
         log.info(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getBalance succeed.]");
+
+        return response.getBody();
     }
 
     /**
