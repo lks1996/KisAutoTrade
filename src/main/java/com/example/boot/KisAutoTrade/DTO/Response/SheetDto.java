@@ -1,4 +1,4 @@
-package com.example.boot.KisAutoTrade.DTO;
+package com.example.boot.KisAutoTrade.DTO.Response;
 
 import lombok.Data;
 

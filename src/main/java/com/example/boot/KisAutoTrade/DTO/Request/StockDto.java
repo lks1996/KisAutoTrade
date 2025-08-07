@@ -1,11 +1,14 @@
-package com.example.boot.KisAutoTrade.DTO;
+package com.example.boot.KisAutoTrade.DTO.Request;
 
-import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDate;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class StockDto {
 
     // 종합계좌번호
@@ -48,4 +51,5 @@ public class StockDto {
     String ordQty;
     // 주문단가
     String ordUnpr;
+
 }

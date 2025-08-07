@@ -1,14 +1,19 @@
 package com.example.boot.KisAutoTrade.Service;
 
-import com.example.boot.KisAutoTrade.DTO.SheetDto;
-import com.example.boot.KisAutoTrade.DTO.StockBalanceResponseDto;
-import com.example.boot.KisAutoTrade.DTO.StockDto;
+import com.example.boot.KisAutoTrade.DTO.Response.BalanceOutput1Dto;
+import com.example.boot.KisAutoTrade.DTO.Response.SheetDto;
+import com.example.boot.KisAutoTrade.DTO.Response.StockBalanceResponseDto;
+import com.example.boot.KisAutoTrade.DTO.Request.StockDto;
+import com.example.boot.KisAutoTrade.DTO.Response.StockPriceResponseDto;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,15 +36,15 @@ public class AutoTradeService {
         for (int i = 1; i < sheetDataList.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
             List<Object> row = sheetDataList.get(i);
 
-            String accountType = row.size() > 0 ? row.get(0).toString() : "";
-            String stockType1 = row.size() > 1 ? row.get(1).toString() : "";
-            String stockType2 = row.size() > 2 ? row.get(2).toString() : "";
-            String stockCode = row.size() > 3 ? row.get(3).toString() : "";
-            String stockName = row.size() > 4 ? row.get(4).toString() : "";
-            double categoryTargetRatio = row.size() > 5 ? Double.parseDouble(row.get(5).toString()) : 0;
-            double targetRatio = row.size() > 6 ? Double.parseDouble(row.get(6).toString()) : 0;
+//            String accountType = row.size() > 0 ? row.get(0).toString() : "";
+//            String stockType1 = row.size() > 1 ? row.get(1).toString() : "";
+            double categoryTargetRatio = row.size() > 0 ? Double.parseDouble(row.get(0).toString()) : 0;
+            String stockType2 = row.size() > 1 ? row.get(1).toString() : "";
+            String stockCode = row.size() > 2 ? row.get(2).toString() : "";
+            String stockName = row.size() > 3 ? row.get(3).toString() : "";
+            double targetRatio = row.size() > 4 ? Double.parseDouble(row.get(4).toString()) : 0;
 
-            SheetDto dto = new SheetDto(accountType, stockType1, stockType2, stockCode,  stockName, categoryTargetRatio, targetRatio);
+            SheetDto dto = new SheetDto("", "", stockType2, stockName,  stockCode, categoryTargetRatio, targetRatio);
             sheetList.add(dto);
         }
 
@@ -51,23 +56,70 @@ public class AutoTradeService {
         StockBalanceResponseDto sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
 
 
+        List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();
+
         log.info("예수금 총액: {}", sbrDto.getOutput2().get(0).getDncaTotAmt());
-        log.info("현재 보유 종목 수: {}", sbrDto.getOutput1().size());
 
+        /** 1. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함. */
 
+        List<SheetDto> unholdingStockList = sheetList.stream()
+                .filter(sheet -> sbrDto.getOutput1().stream()
+                        .noneMatch(own -> own.getPdno().equals(sheet.getStockCode())))
+                .toList();
 
-//        List<StockBalanceDto> stockBalanceList = response;
-//        ObjectMapper mapper = new ObjectMapper();
-//        List<StockBalanceDto> input1List = mapper.convertValue(
-//                response.get("input1"), new TypeReference<List<StockBalanceDto>>() {}
-//        );
-        // 매수가 필요한 종목 리스트 생성.
-            // 구글시트 데이터 종목에 내 보유 종목이 있는 경우
-                // 구글시트 데이터 종목의 비율과 내가 보유하고 있는 종목의 비율이 동일하지 않은 경우(소수점은 내림 처리)
-                    // 리스트에 종목 정보 추가.
+        if (!unholdingStockList.isEmpty()) {
 
-        // 구글시트 데이터 종목이 내가 보유한 종목이 아닌 경우
-            // 리스트에 종목 추가.
+            Map<String, String> holdingMap = holdingStocks.stream()
+                    .collect(Collectors.toMap(BalanceOutput1Dto::getPdno, BalanceOutput1Dto::getEvluAmt));
+
+            // 현재 총 보유금액
+            long totalHoldingAmount = holdingStocks.stream()
+                    .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
+                    .sum();
+
+            // 총 보유금액 = X * Σ(targetRatio of holding 종목)
+            double sumRatioOfHoldings = sheetList.stream()
+                    .filter(p -> holdingMap.containsKey(p.getStockCode()))
+                    .mapToDouble(SheetDto::getTargetRatio)
+                    .sum();
+
+            double estimatedTotalPortfolio = totalHoldingAmount / (sumRatioOfHoldings / 100.0);
+
+            List<StockDto> toBuyList =  new ArrayList<>();
+            // 미보유 종목별 구매 필요 금액 계산
+            for (SheetDto p : sheetList) {
+                if (!holdingMap.containsKey(p.getStockCode())) {
+                    long needToBuyAmount = Math.round(estimatedTotalPortfolio * (p.getTargetRatio() / 100.0));
+
+                    // 현재가 조회
+                    StockDto stockPriceDto = new StockDto();
+                    stockPriceDto.setFidInputIscd(p.getStockCode());
+
+                    JsonNode rootNode = mapper.readTree(domesticStockService.getDomesticStockPrice(stockPriceDto));
+                    JsonNode outputNode = rootNode.path("output");
+                    StockPriceResponseDto sprDto = mapper.treeToValue(outputNode, StockPriceResponseDto.class);
+
+                    long stockPrice = Long.parseLong(sprDto.getStckPrpr());
+                    long quantityToBuy = stockPrice > 0 ? needToBuyAmount / stockPrice : 0;
+
+                    // toBuyList에 추가 (빌더 패턴 사용)
+                    toBuyList.add(StockDto.builder()
+                            .pdno(p.getStockCode())
+                            .ordUnpr(String.valueOf(stockPrice))
+                            .ordQty(String.valueOf(quantityToBuy))
+                            .build()
+                    );
+                    log.info("미보유 종목코드: {}", p.getStockCode());
+                    log.info("미보유 종목 주문 예정가: {}", stockPrice);
+                    log.info("미보유 종목 주문 예정 수량: {}", quantityToBuy);
+                    log.info("========================================");
+                }
+            }
+            log.info("===미보유 종목 존재===");
+        }
+
+        /** 2. 이후에 보유 종목에 대해 포트폴리오 비율과 비교하여 추가 매수 진행.(보유 종목의 현재 비율은 내림 처리.) */
+
 
 
         // 3. 현재가 조회

@@ -1,6 +1,5 @@
 package com.example.boot.KisAutoTrade.Service;
 
-import com.example.boot.KisAutoTrade.DTO.SheetDto;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

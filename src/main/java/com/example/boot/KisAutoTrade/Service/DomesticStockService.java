@@ -1,11 +1,10 @@
 package com.example.boot.KisAutoTrade.Service;
 
-import com.example.boot.KisAutoTrade.DTO.StockDto;
+import com.example.boot.KisAutoTrade.DTO.Request.StockDto;
 import com.example.boot.KisAutoTrade.Token.RequireValidToken;
 import com.example.boot.KisAutoTrade.Token.TokenHolder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -108,7 +107,7 @@ public class DomesticStockService {
      * 국내주식현재가 시세
      */
     @RequireValidToken
-    public void getDomesticStockPrice(StockDto orderStock) {
+    public String getDomesticStockPrice(StockDto orderStock) {
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = getHttpHeaders();
@@ -140,6 +139,8 @@ public class DomesticStockService {
 
         log.info(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getDomesticStockPrice succeed.]");
+
+        return response.getBody();
     }
 
     /**

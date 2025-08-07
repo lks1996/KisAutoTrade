@@ -1,6 +1,6 @@
 package com.example.boot.KisAutoTrade.Controller;
 
-import com.example.boot.KisAutoTrade.DTO.StockDto;
+import com.example.boot.KisAutoTrade.DTO.Request.StockDto;
 import com.example.boot.KisAutoTrade.Service.DomesticStockService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
