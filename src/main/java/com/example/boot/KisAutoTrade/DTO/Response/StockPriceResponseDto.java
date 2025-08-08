@@ -1,25 +1,49 @@
 package com.example.boot.KisAutoTrade.DTO.Response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StockPriceResponseDto {
 
     @JsonProperty("iscd_stat_cls_code")
     private String iscdStatClsCode;
 
-    @JsonProperty("mrkt_cls_code")
-    private String mrktClsCode;
+    @JsonProperty("marg_rate")
+    private String margRate;
 
-    @JsonProperty("shrn_iscd")
-    private String shrnIscd;
+    @JsonProperty("rprs_mrkt_kor_name")
+    private String rprsMrktKorName;
 
-    @JsonProperty("hts_kor_isnm")
-    private String htsKorIsnm;
+    @JsonProperty("new_hgpr_lwpr_cls_code")
+    private String newHgprLwprClsCode;
+
+    @JsonProperty("bstp_kor_isnm")
+    private String bstpKorIsnm;
 
     @JsonProperty("temp_stop_yn")
     private String tempStopYn;
+
+    @JsonProperty("oprc_rang_cont_yn")
+    private String oprcRangContYn;
+
+    @JsonProperty("clpr_rang_cont_yn")
+    private String clprRangContYn;
+
+    @JsonProperty("crdt_able_yn")
+    private String crdtAbleYn;
+
+    @JsonProperty("grmn_rate_cls_code")
+    private String grmnRateClsCode;
+
+    @JsonProperty("elw_pblc_yn")
+    private String elwPblcYn;
 
     @JsonProperty("stck_prpr")
     private String stckPrpr;
@@ -81,80 +105,23 @@ public class StockPriceResponseDto {
     @JsonProperty("pvt_pont_val")
     private String pvtPontVal;
 
+    @JsonProperty("pvt_frst_dmsp_prc")
+    private String pvtFrstDmspPrc;
+
+    @JsonProperty("pvt_scnd_dmsp_prc")
+    private String pvtScndDmspPrc;
+
     @JsonProperty("dmrs_val")
     private String dmrsVal;
 
-    @JsonProperty("bps")
-    private String bps;
-
-    @JsonProperty("per")
-    private String per;
-
-    @JsonProperty("pbr")
-    private String pbr;
-
-    @JsonProperty("eps")
-    private String eps;
-
-    @JsonProperty("divd_rate")
-    private String divdRate;
-
-    @JsonProperty("askp")
-    private String askp;
-
-    @JsonProperty("bidp")
-    private String bidp;
-
-    @JsonProperty("vol_tnrt")
-    private String volTnrt;
-
-    @JsonProperty("invst_tgt_cls")
-    private String invstTgtCls;
-
-    @JsonProperty("short_over_yn")
-    private String shortOverYn;
-
-    @JsonProperty("oprc_hrng_rang_tp_code")
-    private String oprcHrngRangTpCode;
-
-    @JsonProperty("oprc_hrng_rang_rt")
-    private String oprcHrngRangRt;
-
-    @JsonProperty("last_ssts_cntg_qty")
-    private String lastSstsCntgQty;
-
-    @JsonProperty("invt_caful_yn")
-    private String invtCafulYn;
-
-    @JsonProperty("mrkt_warn_cls_code")
-    private String mrktWarnClsCode;
-
-    @JsonProperty("short_over_cntg_qty")
-    private String shortOverCntgQty;
-
-    @JsonProperty("sltr_askp")
-    private String sltrAskp;
-
-    @JsonProperty("sltr_bidp")
-    private String sltrBidp;
+    @JsonProperty("dmsp_val")
+    private String dmspVal;
 
     @JsonProperty("cpfn")
     private String cpfn;
 
     @JsonProperty("rstc_wdth_prc")
-    private String rstcWdthPrc;
-
-    @JsonProperty("stck_dvd_yld")
-    private String stckDvdYld;
-
-    @JsonProperty("epsr")
-    private String epsr;
-
-    @JsonProperty("lstn_stcn")
-    private String lstnStcn;
-
-    @JsonProperty("cpfn_ccls")
-    private String cpfnCcls;
+    private String rstcWdthPric;
 
     @JsonProperty("stck_fcam")
     private String stckFcam;
@@ -165,19 +132,129 @@ public class StockPriceResponseDto {
     @JsonProperty("aspr_unit")
     private String asprUnit;
 
-    @JsonProperty("aspr_unit_num")
-    private String asprUnitNum;
+    @JsonProperty("hts_deal_qty_unit_val")
+    private String htsDealQtyUnitVal;
 
-    @JsonProperty("new_hgpr_lwpr_cls_code")
-    private String newHgprLwprClsCode;
+    @JsonProperty("lstn_stcn")
+    private String lstnStcn;
 
-    @JsonProperty("oprc_rang_hr")
-    private String oprcRangHr;
+    @JsonProperty("hts_avls")
+    private String htsAvls;
 
-    @JsonProperty("oprc_rang_lw")
-    private String oprcRangLw;
+    @JsonProperty("per")
+    private String per;
 
-    @JsonProperty("loan_rmnd_rate")
-    private String loanRmndRate;
+    @JsonProperty("pbr")
+    private String pbr;
 
+    @JsonProperty("stac_month")
+    private String stacMonth;
+
+    @JsonProperty("vol_tnrt")
+    private String volTnrt;
+
+    @JsonProperty("eps")
+    private String eps;
+
+    @JsonProperty("bps")
+    private String bps;
+
+    @JsonProperty("d250_hgpr")
+    private String d250Hgpr;
+
+    @JsonProperty("d250_hgpr_date")
+    private String d250HgprDate;
+
+    @JsonProperty("d250_hgpr_vrss_prpr_rate")
+    private String d250HgprVrssPrprRate;
+
+    @JsonProperty("d250_lwpr")
+    private String d250Lwpr;
+
+    @JsonProperty("d250_lwpr_date")
+    private String d250LwprDate;
+
+    @JsonProperty("d250_lwpr_vrss_prpr_rate")
+    private String d250LwprVrssPrprRate;
+
+    @JsonProperty("stck_dryy_hgpr")
+    private String stckDryyHgpr;
+
+    @JsonProperty("dryy_hgpr_vrss_prpr_rate")
+    private String dryyHgprVrssPrprRate;
+
+    @JsonProperty("dryy_hgpr_date")
+    private String dryyHgprDate;
+
+    @JsonProperty("stck_dryy_lwpr")
+    private String stckDryyLwpr;
+
+    @JsonProperty("dryy_lwpr_vrss_prpr_rate")
+    private String dryyLwprVrssPrprRate;
+
+    @JsonProperty("dryy_lwpr_date")
+    private String dryyLwprDate;
+
+    @JsonProperty("w52_hgpr")
+    private String w52Hgpr;
+
+    @JsonProperty("w52_hgpr_vrss_prpr_ctrt")
+    private String w52HgprVrssPrprCtrt;
+
+    @JsonProperty("w52_hgpr_date")
+    private String w52HgprDate;
+
+    @JsonProperty("w52_lwpr")
+    private String w52Lwpr;
+
+    @JsonProperty("w52_lwpr_vrss_prpr_ctrt")
+    private String w52LwprVrssPrprCtrt;
+
+    @JsonProperty("w52_lwpr_date")
+    private String w52LwprDate;
+
+    @JsonProperty("whol_loan_rmnd_rate")
+    private String wholLoanRmndRate;
+
+    @JsonProperty("ssts_yn")
+    private String sstsYn;
+
+    @JsonProperty("stck_shrn_iscd")
+    private String stckShranIscd;
+
+    @JsonProperty("fcam_cnnm")
+    private String fcamCnnm;
+
+    @JsonProperty("cpfn_cnnm")
+    private String cpfnCnnm;
+
+    @JsonProperty("apprch_rate")
+    private String apprchRate;
+
+    @JsonProperty("frgn_hldn_qty")
+    private String frgnHldnQty;
+
+    @JsonProperty("vi_cls_code")
+    private String viClsCode;
+
+    @JsonProperty("ovtm_vi_cls_code")
+    private String ovtmViClsCode;
+
+    @JsonProperty("last_ssts_cntg_qty")
+    private String lastSstsCntgQty;
+
+    @JsonProperty("invt_caful_yn")
+    private String invtCafulYn;
+
+    @JsonProperty("mrkt_warn_cls_code")
+    private String mrktWarnClsCode;
+
+    @JsonProperty("short_over_yn")
+    private String shortOverYn;
+
+    @JsonProperty("sltr_yn")
+    private String sltrYn;
+
+    @JsonProperty("mang_issu_cls_code")
+    private String mangIssuClsCode;
 }

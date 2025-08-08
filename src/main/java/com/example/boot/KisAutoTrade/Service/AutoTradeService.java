@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class AutoTradeService {
 
         List<SheetDto> sheetList = new ArrayList<>();
 
-        for (int i = 1; i < sheetDataList.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
+        for (int i = 0; i < sheetDataList.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
             List<Object> row = sheetDataList.get(i);
 
 //            String accountType = row.size() > 0 ? row.get(0).toString() : "";
@@ -44,7 +45,7 @@ public class AutoTradeService {
             String stockName = row.size() > 3 ? row.get(3).toString() : "";
             double targetRatio = row.size() > 4 ? Double.parseDouble(row.get(4).toString()) : 0;
 
-            SheetDto dto = new SheetDto("", "", stockType2, stockName,  stockCode, categoryTargetRatio, targetRatio);
+            SheetDto dto = new SheetDto("", "", stockType2, stockCode,  stockName, categoryTargetRatio, targetRatio);
             sheetList.add(dto);
         }
 
@@ -55,6 +56,10 @@ public class AutoTradeService {
         ObjectMapper mapper = new ObjectMapper();
         StockBalanceResponseDto sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
 
+        if( sbrDto.getOutput1()==null || sbrDto.getOutput2()==null ){
+            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 null.");
+            return;
+        }
 
         List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();
 
@@ -68,67 +73,89 @@ public class AutoTradeService {
                 .toList();
 
         if (!unholdingStockList.isEmpty()) {
+//            long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());
+            long cashBalance = 1000000;
 
-            Map<String, String> holdingMap = holdingStocks.stream()
-                    .collect(Collectors.toMap(BalanceOutput1Dto::getPdno, BalanceOutput1Dto::getEvluAmt));
-
-            // 현재 총 보유금액
-            long totalHoldingAmount = holdingStocks.stream()
-                    .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
-                    .sum();
-
-            // 총 보유금액 = X * Σ(targetRatio of holding 종목)
             double sumRatioOfHoldings = sheetList.stream()
-                    .filter(p -> holdingMap.containsKey(p.getStockCode()))
+                    .filter(p -> holdingStocks.stream().anyMatch(h -> h.getPdno().equals(p.getStockCode())))
                     .mapToDouble(SheetDto::getTargetRatio)
                     .sum();
 
-            double estimatedTotalPortfolio = totalHoldingAmount / (sumRatioOfHoldings / 100.0);
+            double sumRatioOfUnholdings = 100.0 - sumRatioOfHoldings;
 
-            List<StockDto> toBuyList =  new ArrayList<>();
-            // 미보유 종목별 구매 필요 금액 계산
-            for (SheetDto p : sheetList) {
-                if (!holdingMap.containsKey(p.getStockCode())) {
-                    long needToBuyAmount = Math.round(estimatedTotalPortfolio * (p.getTargetRatio() / 100.0));
+            List<StockDto> toBuyList = new ArrayList<>();
 
-                    // 현재가 조회
-                    StockDto stockPriceDto = new StockDto();
-                    stockPriceDto.setFidInputIscd(p.getStockCode());
+            List<Map<String, Object>> unholdingBuyCalcList = new ArrayList<>();
 
-                    JsonNode rootNode = mapper.readTree(domesticStockService.getDomesticStockPrice(stockPriceDto));
-                    JsonNode outputNode = rootNode.path("output");
-                    StockPriceResponseDto sprDto = mapper.treeToValue(outputNode, StockPriceResponseDto.class);
 
-                    long stockPrice = Long.parseLong(sprDto.getStckPrpr());
-                    long quantityToBuy = stockPrice > 0 ? needToBuyAmount / stockPrice : 0;
+            for (SheetDto p : unholdingStockList) {
+                double ratioInUnholdings = p.getTargetRatio() / sumRatioOfUnholdings;
+                long needToBuyAmount = Math.round(cashBalance * ratioInUnholdings);
 
-                    // toBuyList에 추가 (빌더 패턴 사용)
+                StockDto stockPriceDto = new StockDto();
+                stockPriceDto.setFidInputIscd(p.getStockCode());
+
+                JsonNode rootNode = mapper.readTree(domesticStockService.getDomesticStockPrice(stockPriceDto));
+                JsonNode outputNode = rootNode.path("output");
+                StockPriceResponseDto sprDto = mapper.treeToValue(outputNode, StockPriceResponseDto.class);
+
+                long stockPrice = Long.parseLong(sprDto.getStckPrpr());
+
+                long quantityToBuy = 0;
+                if (stockPrice > 0 && needToBuyAmount >= stockPrice) {
+                    quantityToBuy = needToBuyAmount / stockPrice; // 정상 수량 계산
+                }
+
+                if (quantityToBuy > 0) {
                     toBuyList.add(StockDto.builder()
                             .pdno(p.getStockCode())
                             .ordUnpr(String.valueOf(stockPrice))
                             .ordQty(String.valueOf(quantityToBuy))
                             .build()
                     );
-                    log.info("미보유 종목코드: {}", p.getStockCode());
-                    log.info("미보유 종목 주문 예정가: {}", stockPrice);
-                    log.info("미보유 종목 주문 예정 수량: {}", quantityToBuy);
-                    log.info("========================================");
                 }
+
+                // 결과 저장용 리스트
+                Map<String, Object> resultMap = new HashMap<>();
+                resultMap.put("code", p.getStockCode());
+                resultMap.put("name", p.getStockName());
+                resultMap.put("needToBuyAmount", needToBuyAmount);
+                resultMap.put("price", stockPrice);
+                resultMap.put("qty", quantityToBuy);
+                unholdingBuyCalcList.add(resultMap);
             }
             log.info("===미보유 종목 존재===");
+
+            // 결과 출력 종목명, 종목코드, 구매금액, 실제 구매비율
+            long sumNeedToBuyAmount = unholdingBuyCalcList.stream()
+                    .mapToLong(m -> (long) m.get("needToBuyAmount"))
+                    .sum();
+
+            for (Map<String, Object> res : unholdingBuyCalcList) {
+                double buyRatio = sumNeedToBuyAmount > 0
+                        ? ((long) res.get("needToBuyAmount") * 100.0) / sumNeedToBuyAmount
+                        : 0.0;
+                res.put("buyRatio", buyRatio);
+
+                log.info("미보유 종목 {}({}): 구매금액 {}원, 실제 구매비율 {}%",
+                        res.get("name"),
+                        res.get("code"),
+                        res.get("needToBuyAmount"),
+                        buyRatio
+                );
+            }
+
+            // 매수 로직 필요.
+
         }
+
 
         /** 2. 이후에 보유 종목에 대해 포트폴리오 비율과 비교하여 추가 매수 진행.(보유 종목의 현재 비율은 내림 처리.) */
 
 
 
-        // 3. 현재가 조회
-
-        StockDto stockPriceDto = new StockDto();
-        domesticStockService.getDomesticStockPrice(stockPriceDto);
-
         // 4. 주문 실행
         StockDto stockOrderDto = new StockDto();
-        domesticStockService.orderDomesticStockCash(stockOrderDto);
+//        domesticStockService.orderDomesticStockCash(stockOrderDto);
     }
 }
