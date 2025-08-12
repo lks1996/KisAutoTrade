@@ -228,9 +228,6 @@ public class AutoTradeService {
         // rebalanceBuyList에 담긴 내용 매수 실행 로직 추가
 
 
-
-
-
         // 4. 주문 실행
         StockDto stockOrderDto = new StockDto();
 //        domesticStockService.orderDomesticStockCash(stockOrderDto);
