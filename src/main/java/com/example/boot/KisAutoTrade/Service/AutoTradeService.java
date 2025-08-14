@@ -57,9 +57,10 @@ public class AutoTradeService {
         log.info("테스트 예수금 총액: {}", cashBalance);
 
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
-        // 3-1. 미보유 종목 추출.
+        // 3-1. 미보유 종목 추출.( 미보유 종목이더라도 목표비중이 0이라면 제외함. )
         StockBalanceResponseDto finalSbrDto = sbrDto;
         List<SheetDto> unholdingStockList = sheetList.stream()
+                .filter(sheet -> sheet.getTargetRatio() > 0)
                 .filter(sheet -> finalSbrDto.getOutput1().stream()
                         .noneMatch(own -> own.getPdno().equals(sheet.getStockCode())))
                 .toList();
