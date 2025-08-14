@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,6 +28,13 @@ public class AutoTradeService {
     }
 
     public void execute() throws Exception {
+        /// FOR TEST ///
+        long cashBalance = 1000000;
+        long totalUnholdingBuyAmount = 0;
+        /// FOR TEST ///
+
+
+
         /** 1. 구글 시트에서 목표 비중 가져오기 */
         List<List<Object>> sheetDataList = sheetDataImportService.getSheetsData();
         List<SheetDto> sheetList = parseSheetData(sheetDataList);
@@ -47,7 +53,8 @@ public class AutoTradeService {
 
         List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();
 
-        log.info("예수금 총액: {}", sbrDto.getOutput2().get(0).getDncaTotAmt());
+        log.info("실예수금 총액: {}", sbrDto.getOutput2().get(0).getDncaTotAmt());
+        log.info("테스트 예수금 총액: {}", cashBalance);
 
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
         // 3-1. 미보유 종목 추출.
@@ -61,7 +68,6 @@ public class AutoTradeService {
         if (!unholdingStockList.isEmpty()) {
             // 3-2. 보유 중인 예수금 조회.
 //            long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());
-            long cashBalance = 1000000;
 
             // 3-3. 보유 중인 종목은 포트폴리오의 비율만큼 이미 가지고 있다고 가정.
             List<BalanceOutput1Dto> finalHoldingStocks = holdingStocks;
@@ -74,9 +80,22 @@ public class AutoTradeService {
             double sumRatioOfUnholdings = 100.0 - sumRatioOfHoldings;
             List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, sumRatioOfUnholdings, cashBalance);
 
-        // 매수 로직 필요.( toBuyList )
-//        domesticStockService.orderDomesticStockCash(stockOrderDto);
 
+            /// FOR TEST ///
+            // 미보유 종목 구매 총액 계산
+            totalUnholdingBuyAmount = toBuyList.stream()
+                    .mapToLong(stock -> {
+                        long price = Long.parseLong(stock.getOrdUnpr());
+                        long qty = Long.parseLong(stock.getOrdQty());
+                        return price * qty;
+                    })
+                    .sum();
+            log.info("테스트 예수금 총액 - 미보유 종목 구매 금액: {}", cashBalance - totalUnholdingBuyAmount);
+            /// FOR TEST ///
+
+
+            // 3-5. 추가 매수가 필요한 종목 주문.
+            orderStocks(toBuyList);
         }
 
 
@@ -87,13 +106,34 @@ public class AutoTradeService {
 
         holdingStocks = sbrDto.getOutput1();                                            // 미보유 매수 후 현재 보유 중인 종목 확인.
 //        long remainCash = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
-        long remainCash = 500000;
 
-                // 4-2. 추가 매수 필요 리스트 추출.
+        /// FOR TEST ///
+        long remainCash = cashBalance -  totalUnholdingBuyAmount;
+        /// FOR TEST ///
+
+        // 4-2. 추가 매수 필요 리스트 추출.
         List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, remainCash);
 
-        // rebalanceBuyList에 담긴 내용 매수 실행 로직 추가
-//        domesticStockService.orderDomesticStockCash(stockOrderDto);
+
+        /// FOR TEST ///
+        long totalRevaluncingAmount = rebalanceBuyList.stream()
+                .mapToLong(stock -> {
+                    long price = Long.parseLong(stock.getOrdUnpr());
+                    long qty = Long.parseLong(stock.getOrdQty());
+                    return price * qty;
+                })
+                .sum();
+        log.info("테스트 예수금 총액 - 미보유 종목 구매 금액 - 리밸런싱 종목 구매 금액: {}", cashBalance - totalUnholdingBuyAmount - totalRevaluncingAmount);
+        /// FOR TEST ///
+
+
+
+        // 4-3. 추가 매수가 필요한 종목 주문.
+        orderStocks(rebalanceBuyList);
+
+        log.info("==========================");
+        log.info("자동 매수 처리 완료.");
+        log.info("==========================");
     }
 
 
@@ -176,6 +216,8 @@ public class AutoTradeService {
                         .pdno(p.getStockCode())
                         .ordUnpr(String.valueOf(stockPrice))
                         .ordQty(String.valueOf(quantityToBuy))
+                        .orderType(2)
+                        .ordDvsn("00")
                         .build()
                 );
             }
@@ -272,6 +314,8 @@ public class AutoTradeService {
                             .pdno(stockCode)
                             .ordUnpr(String.valueOf(stockPrice))
                             .ordQty(String.valueOf(quantityToBuy))
+                            .orderType(2)
+                            .ordDvsn("00")
                             .build()
                     );
 
@@ -286,5 +330,47 @@ public class AutoTradeService {
         return resultList;
     }
 
+    private void orderStocks(List<StockDto> orders) throws Exception {
+        for (StockDto order : orders) {
+            if (isValidOrder(order)) {
+                domesticStockService.orderDomesticStockCash(order);
+            } else {
+                log.warn("Invalid order skipped: {}", order);
+            }
+        }
+    }
+
+    private boolean isValidOrder(StockDto order) {
+        if (isBlank(order.getPdno())) {
+            log.error("주문 실패: 종목코드 누락");
+            return false;
+        }
+        if (!isPositiveNumeric(order.getOrdQty())) {
+            log.error("주문 실패: 잘못된 수량 값 -> {}", order.getOrdQty());
+            return false;
+        }
+        if (!isPositiveNumeric(order.getOrdUnpr())) {
+            log.error("주문 실패: 잘못된 주문단가 값 -> {}", order.getOrdUnpr());
+            return false;
+        }
+        if (order.getOrderType() <= 0) {
+            log.error("주문 실패: 잘못된 주문유형 값 -> {}", order.getOrderType());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isPositiveNumeric(String value) {
+        if (isBlank(value)) return false;
+        try {
+            return Long.parseLong(value) > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
 }

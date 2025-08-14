@@ -151,7 +151,6 @@ public class DomesticStockService {
             }
         }
 
-
         return response.getBody();
     }
 
@@ -211,5 +210,16 @@ public class DomesticStockService {
 
         log.info(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.orderDomesticStockCash succeed.]");
+
+        // 테스트 호출 시 호출 제한이 있음.
+        if(profile.equals("dev")){
+            try {
+                // 2초 대기
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Thread sleep interrupted", e);
+            }
+        }
     }
 }
