@@ -49,6 +49,9 @@ public class AutoTradeService {
         if( sbrDto.getOutput1()==null || sbrDto.getOutput2()==null ){
             log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 null.");
             return;
+        } else if ( sbrDto.getOutput1().isEmpty() || sbrDto.getOutput2().isEmpty() ) {
+            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 비어있음.");
+            return;
         }
 
         List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();
@@ -147,6 +150,26 @@ public class AutoTradeService {
         log.info("==========================");
     }
 
+    /**
+     * 구글 시트 데이터 값 검증.
+     * @param value
+     * @return
+     */
+    private Double safeParseDouble(Object value) {
+        if (value == null) {
+            return 0.0;
+        }
+        try {
+            String str = value.toString().trim();
+            if (str.isEmpty()) {
+                return 0.0;
+            }
+            return Double.parseDouble(str);
+        } catch (NumberFormatException e) {
+            log.error("String to Double 변환 실패: " + value);
+            return 0.0; // 혹은 null 반환도 가능
+        }
+    }
 
     /**
      * 포트폴리오 데이터 임포트.
@@ -161,13 +184,11 @@ public class AutoTradeService {
         for (int i = 0; i < sheetDataList.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
             List<Object> row = sheetDataList.get(i);
 
-//            String accountType = row.size() > 0 ? row.get(0).toString() : "";
-//            String stockType1 = row.size() > 1 ? row.get(1).toString() : "";
-            double categoryTargetRatio = row.size() > 0 ? Double.parseDouble(row.get(0).toString()) : 0;
-            String stockType2 = row.size() > 1 ? row.get(1).toString() : "";
-            String stockCode = row.size() > 2 ? row.get(2).toString() : "";
-            String stockName = row.size() > 3 ? row.get(3).toString() : "";
-            double targetRatio = row.size() > 4 ? Double.parseDouble(row.get(4).toString()) : 0;
+            double categoryTargetRatio = row.size() > 0 ? safeParseDouble(row.get(0)) : 0.0;
+            String stockType2 = row.size() > 1 ? row.get(1).toString().trim() : "";
+            String stockCode = row.size() > 2 ? row.get(2).toString().trim() : "";
+            String stockName = row.size() > 3 ? row.get(3).toString().trim() : "";
+            double targetRatio = row.size() > 4 ? safeParseDouble(row.get(4)) : 0.0;
 
             resultList.add(new SheetDto("", "", stockType2, stockCode, stockName, categoryTargetRatio, targetRatio));
         }

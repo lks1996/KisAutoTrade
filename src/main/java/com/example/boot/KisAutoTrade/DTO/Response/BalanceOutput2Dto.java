@@ -1,9 +1,11 @@
 package com.example.boot.KisAutoTrade.DTO.Response;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BalanceOutput2Dto {
 
     @JsonProperty("dnca_tot_amt")
