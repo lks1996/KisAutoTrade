@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import com.example.boot.KisAutoTrade.Common.Parser;
+import com.example.boot.KisAutoTrade.Common.Validator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,7 +118,7 @@ public class AutoTradeService {
         sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
 
         holdingStocks = sbrDto.getOutput1();                                            // 미보유 매수 후 현재 보유 중인 종목 확인.
-//        long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+//        long remainCash = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
 //        long portfolioTotal = holdingStocks.stream()
 //                .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
 //                .sum() + cashBalance;
@@ -146,29 +148,8 @@ public class AutoTradeService {
         orderStocks(rebalanceBuyList);
 
         log.info("==========================");
-        log.info("자동 매수 처리 완료.");
+        log.warn("자동 매수 처리 완료.");
         log.info("==========================");
-    }
-
-    /**
-     * 구글 시트 데이터 값 검증.
-     * @param value
-     * @return
-     */
-    private Double safeParseDouble(Object value) {
-        if (value == null) {
-            return 0.0;
-        }
-        try {
-            String str = value.toString().trim();
-            if (str.isEmpty()) {
-                return 0.0;
-            }
-            return Double.parseDouble(str);
-        } catch (NumberFormatException e) {
-            log.error("String to Double 변환 실패: " + value);
-            return 0.0; // 혹은 null 반환도 가능
-        }
     }
 
     /**
@@ -184,11 +165,11 @@ public class AutoTradeService {
         for (int i = 0; i < sheetDataList.size(); i++) { // i=1부터 시작: 첫 줄은 헤더
             List<Object> row = sheetDataList.get(i);
 
-            double categoryTargetRatio = row.size() > 0 ? safeParseDouble(row.get(0)) : 0.0;
+            double categoryTargetRatio = row.size() > 0 ? Parser.safeParseDouble(row.get(0)) : 0.0;
             String stockType2 = row.size() > 1 ? row.get(1).toString().trim() : "";
             String stockCode = row.size() > 2 ? row.get(2).toString().trim() : "";
             String stockName = row.size() > 3 ? row.get(3).toString().trim() : "";
-            double targetRatio = row.size() > 4 ? safeParseDouble(row.get(4)) : 0.0;
+            double targetRatio = row.size() > 4 ? Parser.safeParseDouble(row.get(4)) : 0.0;
 
             resultList.add(new SheetDto("", "", stockType2, stockCode, stockName, categoryTargetRatio, targetRatio));
         }
@@ -369,44 +350,11 @@ public class AutoTradeService {
 
     private void orderStocks(List<StockDto> orders) throws Exception {
         for (StockDto order : orders) {
-            if (isValidOrder(order)) {
+            if (Validator.isValidOrder(order)) {
                 domesticStockService.orderDomesticStockCash(order);
             } else {
                 log.warn("Invalid order skipped: {}", order);
             }
-        }
-    }
-
-    private boolean isValidOrder(StockDto order) {
-        if (isBlank(order.getPdno())) {
-            log.error("주문 실패: 종목코드 누락");
-            return false;
-        }
-        if (!isPositiveNumeric(order.getOrdQty())) {
-            log.error("주문 실패: 잘못된 수량 값 -> {}", order.getOrdQty());
-            return false;
-        }
-        if (!isPositiveNumeric(order.getOrdUnpr())) {
-            log.error("주문 실패: 잘못된 주문단가 값 -> {}", order.getOrdUnpr());
-            return false;
-        }
-        if (order.getOrderType() <= 0) {
-            log.error("주문 실패: 잘못된 주문유형 값 -> {}", order.getOrderType());
-            return false;
-        }
-        return true;
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
-    private boolean isPositiveNumeric(String value) {
-        if (isBlank(value)) return false;
-        try {
-            return Long.parseLong(value) > 0;
-        } catch (NumberFormatException e) {
-            return false;
         }
     }
 }
