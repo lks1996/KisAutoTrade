@@ -72,14 +72,21 @@ public class AutoTradeService {
 
             // 3-3. 보유 중인 종목은 포트폴리오의 비율만큼 이미 가지고 있다고 가정.
             List<BalanceOutput1Dto> finalHoldingStocks = holdingStocks;
-            double sumRatioOfHoldings = sheetList.stream()
-                    .filter(p -> finalHoldingStocks.stream().anyMatch(h -> h.getPdno().equals(p.getStockCode())))
-                    .mapToDouble(SheetDto::getTargetRatio)
-                    .sum();
+//            double sumRatioOfHoldings = sheetList.stream()
+//                    .filter(p -> finalHoldingStocks.stream().anyMatch(h -> h.getPdno().equals(p.getStockCode())))
+//                    .mapToDouble(SheetDto::getTargetRatio)
+//                    .sum();
+//
+//            // 3-4. 미보유 종목의 총 구매 필요 비율 계산.
+//            double sumRatioOfUnholdings = 100.0 - sumRatioOfHoldings;
+//            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, sumRatioOfUnholdings, cashBalance);
 
-            // 3-4. 미보유 종목의 총 구매 필요 비율 계산.
-            double sumRatioOfUnholdings = 100.0 - sumRatioOfHoldings;
-            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, sumRatioOfUnholdings, cashBalance);
+            // 포트폴리오 총액 = 보유 종목 평가금액 합 + 예수금
+            long portfolioTotal = holdingStocks.stream()
+                    .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
+                    .sum() + cashBalance;
+
+            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, portfolioTotal);
 
 
             /// FOR TEST ///
@@ -106,14 +113,19 @@ public class AutoTradeService {
         sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
 
         holdingStocks = sbrDto.getOutput1();                                            // 미보유 매수 후 현재 보유 중인 종목 확인.
-//        long remainCash = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+//        long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+//        long portfolioTotal = holdingStocks.stream()
+//                .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
+//                .sum() + cashBalance;
 
         /// FOR TEST ///
-        long remainCash = cashBalance -  totalUnholdingBuyAmount;
+        long portfolioTotal = holdingStocks.stream()
+                .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
+                .sum() + cashBalance - totalUnholdingBuyAmount;
         /// FOR TEST ///
 
         // 4-2. 추가 매수 필요 리스트 추출.
-        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, remainCash);
+        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, portfolioTotal);
 
 
         /// FOR TEST ///
@@ -187,31 +199,35 @@ public class AutoTradeService {
     /**
      * 미보유 종목 매수 계산.
      * @param unholdingStockList 미보유 종목 목록
-     * @param sumRatioOfUnholdings 미보유 종목의 총 비중
-     * @param cashBalance 예수금
+     * @param portfolioTotal 총 보유 종목 평가금 + 현금 예수금
      * @return resultList 매수 대상 종목 리스트
      * @throws Exception
      */
-    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, double sumRatioOfUnholdings, long cashBalance) throws Exception {
+    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, long portfolioTotal) throws Exception {
 
         List<StockDto> resultList = new ArrayList<>();
         List<Map<String, Object>> resultLogList = new ArrayList<>();
 
         for (SheetDto p : unholdingStockList) {
-            double ratioInUnholdings = p.getTargetRatio() / sumRatioOfUnholdings;   // 각 미보유 종목의 구매 필요 비율 계산.
-            long needToBuyAmount = Math.round(cashBalance * ratioInUnholdings);     // 구매 필요 비율에 따른 구매 필요 금액 계산.
+            // 목표 금액 = 포트폴리오 총액 * 목표 비중
+            long targetAmount = (long)Math.floor(portfolioTotal * (p.getTargetRatio() / 100.0));
 
-            // 현재가 조회.
+            // 미보유 종목이므로 현재 보유금액은 0
+            long currentHoldingAmount = 0L;
+
+            // 부족분 = 목표 금액 - 현재 보유 금액
+            long needToBuyAmount = targetAmount - currentHoldingAmount;
+
+            // 현재가 조회
             StockPriceResponseDto sprDto = getCurrentStockPrice(p.getStockCode());
+            long stockPrice = Long.parseLong(sprDto.getStckPrpr());
 
-            long stockPrice = Long.parseLong(sprDto.getStckPrpr()); // 현재가 세팅.
-            long quantityToBuy = 0;                                 // 구매 수량 디폴트 0 세팅.
-
+            long quantityToBuy = 0;
             if (stockPrice > 0 && needToBuyAmount >= stockPrice) {
-                quantityToBuy = needToBuyAmount / stockPrice; // 구매 필요 수량 계산.
+                quantityToBuy = needToBuyAmount / stockPrice;
             }
 
-            // 구매 필요 수량이 있는 경우 리스트에 추가.
+            // 구매 필요 수량이 있는 경우 리스트에 추가
             if (quantityToBuy > 0) {
                 resultList.add(StockDto.builder()
                         .pdno(p.getStockCode())
@@ -223,7 +239,7 @@ public class AutoTradeService {
                 );
             }
 
-            // 결과 저장용 리스트.
+            // 결과 저장용 로그
             Map<String, Object> resultLogMap = new HashMap<>();
             resultLogMap.put("code", p.getStockCode());
             resultLogMap.put("name", p.getStockName());
@@ -232,6 +248,7 @@ public class AutoTradeService {
             resultLogMap.put("qty", quantityToBuy);
             resultLogList.add(resultLogMap);
         }
+
         log.info("===미보유 종목 존재===");
 
         // 결과 출력 ( 종목명, 종목코드, 구매금액, 실제 구매비율 )
@@ -373,5 +390,5 @@ public class AutoTradeService {
             return false;
         }
     }
-
+// 금 현물을 모의투자 장에서 전부 판매하고, 소스를 돌려서 금 현물을 얼마나 매수하는지 확인 필요. 지난번에는 예수금이 100만원일 때 거의 100만원에 근접하게 금현물을 매수해버림.
 }

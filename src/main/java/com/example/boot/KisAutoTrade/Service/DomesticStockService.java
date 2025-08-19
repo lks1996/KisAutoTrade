@@ -144,7 +144,7 @@ public class DomesticStockService {
         if(profile.equals("dev")){
             try {
                 // 2초 대기
-                Thread.sleep(2000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Thread sleep interrupted", e);
@@ -215,7 +215,7 @@ public class DomesticStockService {
         if(profile.equals("dev")){
             try {
                 // 2초 대기
-                Thread.sleep(2000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Thread sleep interrupted", e);
