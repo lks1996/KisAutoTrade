@@ -119,13 +119,11 @@ public class AutoTradeService {
 //                .sum() + cashBalance;
 
         /// FOR TEST ///
-        long portfolioTotal = holdingStocks.stream()
-                .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
-                .sum() + cashBalance - totalUnholdingBuyAmount;
+        long remainCash = cashBalance -  totalUnholdingBuyAmount;
         /// FOR TEST ///
 
         // 4-2. 추가 매수 필요 리스트 추출.
-        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, portfolioTotal);
+        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, remainCash);
 
 
         /// FOR TEST ///
@@ -285,7 +283,7 @@ public class AutoTradeService {
         // 1. 총 평가 금액 계산. (보유 종목 평가금)
         long totalEvalAmount = holdingStocks.stream()
                 .mapToLong(h -> Long.parseLong(h.getEvluAmt()))
-                .sum();
+                .sum() + remainCash;
 
         // 2. 비율 비교 후 부족분 매수.
         List<StockDto> resultList = new ArrayList<>();
@@ -390,5 +388,4 @@ public class AutoTradeService {
             return false;
         }
     }
-// 금 현물을 모의투자 장에서 전부 판매하고, 소스를 돌려서 금 현물을 얼마나 매수하는지 확인 필요. 지난번에는 예수금이 100만원일 때 거의 100만원에 근접하게 금현물을 매수해버림.
 }
