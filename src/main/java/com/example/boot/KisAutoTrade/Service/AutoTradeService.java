@@ -55,6 +55,13 @@ public class AutoTradeService {
 
         log.info("실예수금 총액: {}", cashBalance);
 
+
+        cashBalance = 1000000;  // 보유 중인 예수금 조회.
+        log.info("테스트 예수금 총액: {}", cashBalance);
+
+
+
+
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
         // 3-1. 미보유 종목 추출.( 미보유 종목이더라도 목표비중이 0이라면 제외함. )
         StockBalanceResponseDto finalSbrDto = sbrDto;
@@ -75,6 +82,21 @@ public class AutoTradeService {
 
             // 3-3. 추가 매수가 필요한 종목 주문.
             orderStocks(toBuyList);
+
+            /// FOR TEST ///
+            cashBalance = cashBalance - toBuyList.stream().mapToLong(dto -> {
+                try {
+                    long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                    long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                    return price * qty;
+                } catch (NumberFormatException e) {
+                    // 숫자 변환 실패 시 0 처리
+                    return 0L;
+                }
+            }).sum();
+
+            log.info("미보유 종목 매수 후 예수금 총액: {}", cashBalance);
+            /// FOR TEST ///
         }
 
 
@@ -91,6 +113,21 @@ public class AutoTradeService {
 
         // 4-3. 추가 매수가 필요한 종목 주문.
         orderStocks(rebalanceBuyList);
+
+        /// FOR TEST ///
+        cashBalance = cashBalance - rebalanceBuyList.stream().mapToLong(dto -> {
+            try {
+                long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                return price * qty;
+            } catch (NumberFormatException e) {
+                // 숫자 변환 실패 시 0 처리
+                return 0L;
+            }
+        }).sum();
+
+        log.info("리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
+        /// FOR TEST ///
 
         log.info("==========================");
         log.warn("자동 매수 처리 완료.");

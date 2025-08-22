@@ -42,4 +42,12 @@ public class DomesticSockController {
     public void orderDomesticStockCash(StockDto orderStock) throws JsonProcessingException {
         domesticStockService.orderDomesticStockCash(orderStock);
     }
+
+    /**
+     * 주식일별주문체결조회
+     */
+    @GetMapping("/dailyCcld")
+    public void getDomesticDailyCcld(StockDto stockDto) throws JsonProcessingException {
+        domesticStockService.getDomesticDailyCcld(stockDto);
+    }
 }

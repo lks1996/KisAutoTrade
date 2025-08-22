@@ -97,7 +97,7 @@ public class DomesticStockService {
                 entity,
                 String.class);
 
-        log.info(" response.getBody(): {}",  response.getBody());
+        log.debug(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getBalance succeed.]");
 
         return response.getBody();
@@ -137,7 +137,7 @@ public class DomesticStockService {
                 entity,
                 String.class);
 
-        log.info(" response.getBody(): {}",  response.getBody());
+        log.debug(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getDomesticStockPrice succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
@@ -199,8 +199,8 @@ public class DomesticStockService {
         log.info(" 주문단가: {}",  orderStock.getOrdUnpr());
         log.info("==========================================");
 
-        log.info("Headers: {}", headers);
-        log.info("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
+        log.debug("Headers: {}", headers);
+        log.debug("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
 
         ResponseEntity<String> response = restTemplate.exchange(
                 DOMAIN + urlOrder,
@@ -208,8 +208,72 @@ public class DomesticStockService {
                 entity,
                 String.class);
 
-        log.info(" response.getBody(): {}",  response.getBody());
+        log.debug(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.orderDomesticStockCash succeed.]");
+
+        // 테스트 호출 시 호출 제한이 있음.
+        if(profile.equals("dev")){
+            try {
+                // 2초 대기
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Thread sleep interrupted", e);
+            }
+        }
+    }
+
+    /**
+     * 주식일별주문체결조회[v1_국내주식-005]
+     */
+    @RequireValidToken
+    public void getDomesticDailyCcld(StockDto stockDto) throws JsonProcessingException {
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper objectMapper = new ObjectMapper();
+        HttpHeaders headers = getHttpHeaders();
+
+        headers.set("custtype", "P");// 고객 타입 (B: 법인 , P: 개인)
+        if(profile.equals("prod")) {
+            headers.set("tr_id", "TTTC0081R");  // 실전용(3개월 이내 기간)
+        } else if(profile.equals("dev")){
+            headers.set("tr_id", "VTTC0081R");  // 테스트 전용(3개월 이내 기간)
+        }
+
+        // 주식일별주문체결조회[v1_국내주식-005]
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("CANO", CANO);
+        requestBody.put("ACNT_PRDT_CD", ACNT_PRDT_CD);
+        requestBody.put("INQR_STRT_DT", stockDto.getInqrStrtDt());  // 조회시작일자( YYYYMMDD )
+        requestBody.put("INQR_END_DT", stockDto.getInqrEndDt()); // 조회종료일자( YYYYMMDD )
+        requestBody.put("SLL_BUY_DVSN_CD", stockDto.getSllBuyDvsnCd()); // 매도매수구분코드( 00 : 전체 / 01 : 매도 / 02 : 매수 )
+        requestBody.put("KRX_FWDG_ORD_ORGNO", stockDto.getKrxFwdgOrdOrgno()); // 주문채번지점번호
+        requestBody.put("CCLD_DVSN", stockDto.getCcldDvsn()); // 체결구분( '00 전체 / 01 체결 / 02 미체결' )
+        requestBody.put("INQR_DVSN", stockDto.getInqrDvsn()); // 조회구분( '00 역순 / 01 정순' )
+        requestBody.put("INQR_DVSN_1", stockDto.getInqrDvsn1()); // 조회구분1( '없음: 전체 / 1: ELW? 2: 프리보드' )
+        requestBody.put("INQR_DVSN_3", stockDto.getInqrDvsn3()); // 조회구분3( '00 전체 / 01 현금 / 02 신용 / 03 담보 / 04 대주 / 05 대여 / 06 자기융자신규/상환 / 07 유통융자신규/상환' )
+        requestBody.put("EXCG_ID_DVSN_CD", stockDto.getExcgIdDvsnCd()); // 거래소ID구분코드( 한국거래소 : KRX / 대체거래소 (NXT) : NXT / SOR (Smart Order Routing) : SOR / ALL : 전체 )
+        requestBody.put("CTX_AREA_FK100", stockDto.getCtxAreaFk100()); // 연속조회검색조건100( '공란 : 최초 조회시 )
+        requestBody.put("CTX_AREA_NK100", stockDto.getCtxAreaNk100()); // 연속조회키100( '공란 : 최초 조회시 )
+
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+
+        log.info("===================주문체결조회======================");
+        log.info(" 주문체결조회 기간: {} - {}",  stockDto.getInqrStrtDt(),  stockDto.getInqrEndDt());
+        log.info("==========================================");
+
+        log.debug("Headers: {}", headers);
+        log.debug("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                DOMAIN + urlOrder,
+                HttpMethod.POST,
+                entity,
+                String.class);
+
+        log.debug(" response.getBody(): {}",  response.getBody());
+        log.info("[DomesticService.getDomesticDailyCcld succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
         if(profile.equals("dev")){
