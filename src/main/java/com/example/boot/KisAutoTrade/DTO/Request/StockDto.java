@@ -44,7 +44,7 @@ public class StockDto {
     // 주문타입
     int orderType;
     // 종목코드(6자리)
-    String pdno;
+    String pdno = "";
     // 주문구분 ( 00 : KRX NXT SOR 지정가 , 01 : KRX SOR 시장가)
     String ordDvsn = "00";
     // 주문수량
@@ -59,7 +59,9 @@ public class StockDto {
     // 매도매수구분코드( 00 : 전체 / 01 : 매도 / 02 : 매수 )
     String sllBuyDvsnCd;
     // 주문채번지점번호
-    String krxFwdgOrdOrgno;
+    String ordGnoBrno;
+    // 필수값 아님 !! 주문시 한국투자증권 시스템에서 채번된 주문번호
+    String odno = "";
     // 체결구분( '00 전체 / 01 체결 / 02 미체결' )
     String ccldDvsn;
     // 조회구분( '00 역순 / 01 정순' )

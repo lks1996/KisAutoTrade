@@ -50,4 +50,12 @@ public class DomesticSockController {
     public void getDomesticDailyCcld(StockDto stockDto) throws JsonProcessingException {
         domesticStockService.getDomesticDailyCcld(stockDto);
     }
+
+    /**
+     * 모의투자 전용 거래내역 조회
+     */
+    @GetMapping("/getTestOrderHistory")
+    public void getTestDomesticOrderHistory(StockDto stockDto) throws JsonProcessingException {
+        domesticStockService.getTestDomesticOrderHistory(stockDto);
+    }
 }

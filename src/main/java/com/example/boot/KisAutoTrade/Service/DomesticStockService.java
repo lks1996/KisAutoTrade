@@ -46,6 +46,8 @@ public class DomesticStockService {
     private final String urlInquirePrice = "/uapi/domestic-stock/v1/quotations/inquire-price";
     // 국내주식주문(현금)_국내주식
     private final String urlOrder = "/uapi/domestic-stock/v1/trading/order-cash";
+    // 국내주식주문(현금)_국내주식
+    private final String urlDailyCcld = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld";
 
     private HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
@@ -225,6 +227,7 @@ public class DomesticStockService {
 
     /**
      * 주식일별주문체결조회[v1_국내주식-005]
+     * 모의투자는 지원하지 않음.
      */
     @RequireValidToken
     public void getDomesticDailyCcld(StockDto stockDto) throws JsonProcessingException {
@@ -240,39 +243,51 @@ public class DomesticStockService {
         }
 
         // 주식일별주문체결조회[v1_국내주식-005]
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("CANO", CANO);
-        requestBody.put("ACNT_PRDT_CD", ACNT_PRDT_CD);
-        requestBody.put("INQR_STRT_DT", stockDto.getInqrStrtDt());  // 조회시작일자( YYYYMMDD )
-        requestBody.put("INQR_END_DT", stockDto.getInqrEndDt()); // 조회종료일자( YYYYMMDD )
-        requestBody.put("SLL_BUY_DVSN_CD", stockDto.getSllBuyDvsnCd()); // 매도매수구분코드( 00 : 전체 / 01 : 매도 / 02 : 매수 )
-        requestBody.put("KRX_FWDG_ORD_ORGNO", stockDto.getKrxFwdgOrdOrgno()); // 주문채번지점번호
-        requestBody.put("CCLD_DVSN", stockDto.getCcldDvsn()); // 체결구분( '00 전체 / 01 체결 / 02 미체결' )
-        requestBody.put("INQR_DVSN", stockDto.getInqrDvsn()); // 조회구분( '00 역순 / 01 정순' )
-        requestBody.put("INQR_DVSN_1", stockDto.getInqrDvsn1()); // 조회구분1( '없음: 전체 / 1: ELW? 2: 프리보드' )
-        requestBody.put("INQR_DVSN_3", stockDto.getInqrDvsn3()); // 조회구분3( '00 전체 / 01 현금 / 02 신용 / 03 담보 / 04 대주 / 05 대여 / 06 자기융자신규/상환 / 07 유통융자신규/상환' )
-        requestBody.put("EXCG_ID_DVSN_CD", stockDto.getExcgIdDvsnCd()); // 거래소ID구분코드( 한국거래소 : KRX / 대체거래소 (NXT) : NXT / SOR (Smart Order Routing) : SOR / ALL : 전체 )
-        requestBody.put("CTX_AREA_FK100", stockDto.getCtxAreaFk100()); // 연속조회검색조건100( '공란 : 최초 조회시 )
-        requestBody.put("CTX_AREA_NK100", stockDto.getCtxAreaNk100()); // 연속조회키100( '공란 : 최초 조회시 )
-
-        String jsonBody = objectMapper.writeValueAsString(requestBody);
-
-        HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(DOMAIN + urlDailyCcld)
+                .queryParam("CANO", CANO)
+                .queryParam("ACNT_PRDT_CD", ACNT_PRDT_CD)
+                .queryParam("INQR_STRT_DT", stockDto.getInqrStrtDt())  // 조회시작일자( YYYYMMDD )
+                .queryParam("INQR_END_DT", stockDto.getInqrEndDt()) // 조회종료일자( YYYYMMDD )
+                .queryParam("SLL_BUY_DVSN_CD", stockDto.getSllBuyDvsnCd()) // 매도매수구분코드( 00 : 전체 / 01 : 매도 / 02 : 매수 )
+                .queryParam("PDNO", stockDto.getPdno()) // 필수값 아님 ! 종목번호 6자리
+                .queryParam("ORD_GNO_BRNO", stockDto.getOrdGnoBrno()) // 주문채번지점번호
+                .queryParam("ODNO", stockDto.getOdno()) // 필수값 아님 ! 주문번호
+                .queryParam("CCLD_DVSN", stockDto.getCcldDvsn()) // 체결구분( '00 전체 / 01 체결 / 02 미체결' )
+                .queryParam("INQR_DVSN", stockDto.getInqrDvsn()) // 조회구분( '00 역순 / 01 정순' )
+                .queryParam("INQR_DVSN_1", stockDto.getInqrDvsn1()) // 조회구분1( '없음: 전체 / 1: ELW? 2: 프리보드' )
+                .queryParam("INQR_DVSN_3", stockDto.getInqrDvsn3()) // 조회구분3( '00 전체 / 01 현금 / 02 신용 / 03 담보 / 04 대주 / 05 대여 / 06 자기융자신규/상환 / 07 유통융자신규/상환' )
+                .queryParam("EXCG_ID_DVSN_CD", stockDto.getExcgIdDvsnCd()) // 거래소ID구분코드( 한국거래소 : KRX / 대체거래소 (NXT) : NXT / SOR (Smart Order Routing) : SOR / ALL : 전체 )
+                .queryParam("CTX_AREA_FK100", stockDto.getCtxAreaFk100()) // 연속조회검색조건100( '공란 : 최초 조회시 )
+                .queryParam("CTX_AREA_NK100", stockDto.getCtxAreaNk100()); // 연속조회키100( '공란 : 최초 조회시 )
 
         log.info("===================주문체결조회======================");
         log.info(" 주문체결조회 기간: {} - {}",  stockDto.getInqrStrtDt(),  stockDto.getInqrEndDt());
         log.info("==========================================");
 
         log.debug("Headers: {}", headers);
-        log.debug("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
+
+        HttpEntity<?> entity = new HttpEntity<>(headers);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                DOMAIN + urlOrder,
-                HttpMethod.POST,
+                builder.toUriString(),
+                HttpMethod.GET,
                 entity,
                 String.class);
 
         log.debug(" response.getBody(): {}",  response.getBody());
+        log.debug("CANO -> {}", CANO);
+        log.debug("ACNT_PRDT_CD -> {}", ACNT_PRDT_CD);
+        log.debug("INQR_STRT_DT -> {}", stockDto.getInqrStrtDt());
+        log.debug("INQR_END_DT -> {}", stockDto.getInqrEndDt());
+        log.debug("SLL_BUY_DVSN_CD -> {}", stockDto.getSllBuyDvsnCd());
+        log.debug("ORD_GNO_BRNO -> {}", stockDto.getOrdGnoBrno());
+        log.debug("CCLD_DVSN -> {}", stockDto.getCcldDvsn());
+        log.debug("INQR_DVSN -> {}", stockDto.getInqrDvsn());
+        log.debug("INQR_DVSN_1 -> {}", stockDto.getInqrDvsn1());
+        log.debug("INQR_DVSN_3 -> {}", stockDto.getInqrDvsn3());
+        log.debug("EXCG_ID_DVSN_CD -> {}", stockDto.getExcgIdDvsnCd());
+        log.debug("CTX_AREA_FK100 -> {}", stockDto.getCtxAreaFk100());
+        log.debug("CTX_AREA_NK100 -> {}", stockDto.getCtxAreaNk100());
         log.info("[DomesticService.getDomesticDailyCcld succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
@@ -285,5 +300,46 @@ public class DomesticStockService {
                 log.error("Thread sleep interrupted", e);
             }
         }
+    }
+
+
+    /**
+     * 모의투자 전용 거래내역 조회.
+     * 웹 직접 호출. API 아님.
+     */
+    @RequireValidToken
+    public void getTestDomesticOrderHistory(StockDto stockDto) throws JsonProcessingException {
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper objectMapper = new ObjectMapper();
+        HttpHeaders headers = getHttpHeaders();
+
+        if(profile.equals("prod")) {
+            log.error("Cannot get Order History because Current Profile is -> {}", profile);
+            return;
+        }
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("league", "0");
+        requestBody.put("userid", CANO);
+        requestBody.put("stdate", stockDto.getInqrStrtDt());  // 조회 시작일( YYYYMMDD )
+        requestBody.put("eddate", stockDto.getInqrEndDt());   // 조회 종료일( YYYYMMDD )
+        requestBody.put("_page", "1");     // 조회 페이지
+        requestBody.put("_limit", "10");   // 페이지당 조회 결과 수
+        requestBody.put("midpath", "stocks/myasset/trdwon");
+
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+
+        log.debug("Headers: {}", headers);
+        log.debug("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                DOMAIN + urlOrder,
+                HttpMethod.POST,
+                entity,
+                String.class);
+        log.info("[DomesticService.getTestDomesticOrderHistory succeed.]");
+
     }
 }
