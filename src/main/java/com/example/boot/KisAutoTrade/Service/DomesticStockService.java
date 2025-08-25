@@ -305,7 +305,7 @@ public class DomesticStockService {
 
     /**
      * 모의투자 전용 거래내역 조회.
-     * 웹 직접 호출. API 아님.
+     * 웹 직접 호출. OPEN API 아님.
      */
     @RequireValidToken
     public void getTestDomesticOrderHistory(StockDto stockDto) throws JsonProcessingException {
@@ -335,10 +335,12 @@ public class DomesticStockService {
         log.debug("Request Body: {}", new ObjectMapper().writeValueAsString(requestBody));
 
         ResponseEntity<String> response = restTemplate.exchange(
-                DOMAIN + urlOrder,
+                "https://vts3.koreainvestment.com/apis/htsec/stocks/myasset/trdwon",
                 HttpMethod.POST,
                 entity,
                 String.class);
+
+        log.debug(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getTestDomesticOrderHistory succeed.]");
 
     }

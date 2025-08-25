@@ -36,31 +36,18 @@ public class AutoTradeService {
         List<SheetDto> sheetList = parseSheetData(sheetDataList);
 
         /** 2. 잔고 조회 */
-        StockDto requestDto = new StockDto();
-        String balancerResponse = domesticStockService.getBalance(requestDto);
-
-        ObjectMapper mapper = new ObjectMapper();
-        StockBalanceResponseDto sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
-
-        if( sbrDto.getOutput1()==null || sbrDto.getOutput2()==null ){
-            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 null.");
-            return;
-        } else if ( sbrDto.getOutput1().isEmpty() || sbrDto.getOutput2().isEmpty() ) {
-            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 비어있음.");
-            return;
-        }
+        StockBalanceResponseDto sbrDto= getCurrentBalance();
+        if(!StockBalanceResponseCheck(sbrDto)) return;
 
         List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();                    // 보유 중인 종목 조회.
         long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());  // 보유 중인 예수금 조회.
 
-        log.info("실예수금 총액: {}", cashBalance);
+        log.info("[INFO]실예수금 총액: {}", cashBalance);
 
-
+        /// FOR TEST ///
         cashBalance = 1000000;  // 보유 중인 예수금 조회.
-        log.info("테스트 예수금 총액: {}", cashBalance);
-
-
-
+        log.info("[INFO]테스트 예수금 총액: {}", cashBalance);
+        /// FOR TEST ///
 
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
         // 3-1. 미보유 종목 추출.( 미보유 종목이더라도 목표비중이 0이라면 제외함. )
@@ -95,15 +82,22 @@ public class AutoTradeService {
                 }
             }).sum();
 
-            log.info("미보유 종목 매수 후 예수금 총액: {}", cashBalance);
+            log.info("[INFO]미보유 종목 매수 후 예수금 총액: {}", cashBalance);
             /// FOR TEST ///
-        }
 
+            // 3-4. 미보유 종목이 매수되었는지 확인.
+            // 5초 간격으로 10번 확인.
+            boolean buyCompleted = waitForBuyCompletion(toBuyList, 10, 5000);
+
+            if ( !buyCompleted ) {
+                log.warn("[WARN]미보유 종목 매수 미체결 상태로 리밸런싱 시작.");
+            }
+        }
 
         /** 4. 이후에 보유 종목에 대해 포트폴리오 비율과 비교하여 추가 매수 진행.(보유 종목의 현재 비율은 내림 처리.) */
         // 4-1. 잔고 재조회.
-        balancerResponse = domesticStockService.getBalance(requestDto);
-        sbrDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
+        sbrDto = getCurrentBalance();
+        if(!StockBalanceResponseCheck(sbrDto)) return;
 
         holdingStocks = sbrDto.getOutput1();                                        // 미보유 매수 후 현재 보유 중인 종목 재확인.
         cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
@@ -126,11 +120,11 @@ public class AutoTradeService {
             }
         }).sum();
 
-        log.info("리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
+        log.info("[INFO]리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
         /// FOR TEST ///
 
         log.info("==========================");
-        log.warn("자동 매수 처리 완료.");
+        log.warn("[WARN]자동 매수 처리 완료.");
         log.info("==========================");
     }
 
@@ -157,6 +151,33 @@ public class AutoTradeService {
         }
         return resultList;
     }
+
+    private StockBalanceResponseDto getCurrentBalance() throws Exception{
+        StockDto requestDto = new StockDto();
+        String balancerResponse = domesticStockService.getBalance(requestDto);
+
+        ObjectMapper mapper = new ObjectMapper();
+        StockBalanceResponseDto resultDto = mapper.readValue(balancerResponse, StockBalanceResponseDto.class);
+
+        return resultDto;
+    }
+
+    /**
+     * 잔고 응답 유효성 체크
+     * @param sbrDto
+     * @return
+     */
+    private boolean StockBalanceResponseCheck(StockBalanceResponseDto sbrDto){
+        if( sbrDto.getOutput1()==null || sbrDto.getOutput2()==null ){
+            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 null.");
+            return false;
+        } else if ( sbrDto.getOutput1().isEmpty() || sbrDto.getOutput2().isEmpty() ) {
+            log.error("[ERROR] 잔고 조회 실패. output1 혹은 output2가 비어있음.");
+            return false;
+        }
+        return true;
+    }
+
 
     /**
      * 현재가 조회.
@@ -268,6 +289,56 @@ public class AutoTradeService {
     }
 
     /**
+     * 미보유 종목 매수 체결 확인.
+     * @param toBuyList 매수 필요 종목 리스트
+     * @param maxRetries 재시도 횟수
+     * @param intervalMillis 재시도 간격
+     * @return
+     */
+    public boolean waitForBuyCompletion(List<StockDto> toBuyList, int maxRetries, long intervalMillis) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // 현재 잔고 조회
+                StockBalanceResponseDto sbrDto = getCurrentBalance();
+                if(!StockBalanceResponseCheck(sbrDto)) return false;
+
+                List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();
+
+                // 모든 toBuyList 종목이 원하는 수량 이상 보유하고 있는지 확인.
+                boolean isAllBought = toBuyList.stream().allMatch(toBuy -> {
+                    BalanceOutput1Dto matched = holdingStocks.stream()
+                            .filter(h -> h.getPdno().equals(toBuy.getPdno()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (matched == null) return false;
+
+                    int holdingQty = Integer.parseInt(matched.getHldgQty()); // 현재 보유 수량
+                    int expectedQty = Integer.parseInt(toBuy.getOrdQty());   // 매수 요청 수량
+                    return holdingQty >= expectedQty;
+                });
+
+                if (isAllBought) {
+                    log.warn("[INFO] 모든 매수 체결 완료 확인됨. 다음 프로세스로 진행.");
+                    return true;
+                }
+
+                log.info("[INFO] 매수 체결 대기 중... (시도 {}/{})", attempt, maxRetries);
+                Thread.sleep(intervalMillis);
+
+            } catch (Exception e) {
+                log.error("[ERROR] 매수 체결 확인 중 예외 발생", e);
+                return false;
+            }
+        }
+        log.error("[ERROR] 지정된 시간 내 매수 체결 확인 실패");
+        return false;
+    }
+
+
+    /**
      * 보유 종목 중 추가 매수 필요 종목 계산.
      * @param holdingStocks 현재 보유 종목 목록
      * @param sheetList 포트폴리오 목표 비중 목록
@@ -284,7 +355,7 @@ public class AutoTradeService {
 
         for (BalanceOutput1Dto holding : holdingStocks) {
             if (cashBalance <= 0) {
-                log.info("예수금 소진으로 추가 매수 중단");
+                log.info("[INFO]예수금 소진으로 추가 매수 중단");
                 break;
             }
 
@@ -332,7 +403,7 @@ public class AutoTradeService {
                     long buyCost = quantityToBuy * stockPrice;
                     cashBalance -= buyCost;
 
-                    log.info("보유 종목 비율 조정 매수: {} ({}주, {}원), 남은 예수금: {}원",
+                    log.info("[INFO] 보유 종목 비율 조정 매수: {} ({}주, {}원), 남은 예수금: {}원",
                             stockCode, quantityToBuy, buyCost, cashBalance);
                 }
             }
@@ -345,7 +416,7 @@ public class AutoTradeService {
             if (Validator.isValidOrder(order)) {
                 domesticStockService.orderDomesticStockCash(order);
             } else {
-                log.warn("Invalid order skipped: {}", order);
+                log.warn("[WARN] Invalid order skipped: {}", order);
             }
         }
     }
