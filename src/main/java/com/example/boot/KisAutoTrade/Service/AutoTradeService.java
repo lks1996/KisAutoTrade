@@ -65,7 +65,7 @@ public class AutoTradeService {
             long portfolioTotal = getPortfolioTotal(holdingStocks,  cashBalance);
 
             // 3-2. 미보유 종목 매수 필요 리스트 추출.
-            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, portfolioTotal);
+            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, portfolioTotal, cashBalance);
 
             // 3-3. 추가 매수가 필요한 종목 주문.
             orderStocks(toBuyList);
@@ -100,7 +100,7 @@ public class AutoTradeService {
         if(!StockBalanceResponseCheck(sbrDto)) return;
 
         holdingStocks = sbrDto.getOutput1();                                        // 미보유 매수 후 현재 보유 중인 종목 재확인.
-        cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+//        cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
 
         // 4-2. 추가 매수 필요 리스트 추출.
         List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, cashBalance);
@@ -218,7 +218,7 @@ public class AutoTradeService {
      * @return resultList 매수 대상 종목 리스트
      * @throws Exception
      */
-    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, long portfolioTotal) throws Exception {
+    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, long portfolioTotal, long cashBalance) throws Exception {
 
         List<StockDto> resultList = new ArrayList<>();
         List<Map<String, Object>> resultLogList = new ArrayList<>();
@@ -232,6 +232,9 @@ public class AutoTradeService {
 
             // 부족분 = 목표 금액 - 현재 보유 금액
             long needToBuyAmount = targetAmount - currentHoldingAmount;
+            if (needToBuyAmount > cashBalance) {
+                needToBuyAmount = cashBalance;
+            }
 
             // 현재가 조회
             StockPriceResponseDto sprDto = getCurrentStockPrice(p.getStockCode());
