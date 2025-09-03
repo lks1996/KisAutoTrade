@@ -27,6 +27,9 @@ dependencies {
 	implementation 'com.google.apis:google-api-services-sheets:v4-rev20230815-2.0.0'
  	implementation 'com.google.http-client:google-http-client-jackson2:1.43.3'
 	implementation 'com.github.maricn:logback-slack-appender:1.6.1'
+	implementation 'com.google.cloud:google-cloud-firestore:3.18.0'
+	implementation 'com.google.firebase:firebase-admin:9.3.0'
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'

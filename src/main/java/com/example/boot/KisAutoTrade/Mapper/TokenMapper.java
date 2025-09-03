@@ -5,13 +5,17 @@ import com.example.boot.KisAutoTrade.Entity.Token;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Component
 public class TokenMapper {
     public Token toToken(TokenRes tokenRes, String type) {
         return Token.builder()
                 .accessToken(tokenRes.accessToken())
-                .expiration(tokenRes.accessTokenTokenExpired())
+                .expiration(Date.from(tokenRes.accessTokenTokenExpired()
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()))
                 .type(type)
                 .build();
     }
