@@ -44,6 +44,11 @@ public class AutoTradeService {
 
         log.info("[INFO]실예수금 총액: {}", cashBalance);
 
+        /// FOR TEST ///
+        cashBalance = 1000000;  // 보유 중인 예수금 조회.
+        log.info("[INFO]테스트 예수금 총액: {}", cashBalance);
+        /// FOR TEST ///
+
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
         // 3-1. 미보유 종목 추출.( 미보유 종목이더라도 목표비중이 0이라면 제외함. )
         StockBalanceResponseDto finalSbrDto = sbrDto;
@@ -65,6 +70,21 @@ public class AutoTradeService {
             // 3-3. 추가 매수가 필요한 종목 주문.
             orderStocks(toBuyList);
 
+            /// FOR TEST ///
+            cashBalance = cashBalance - toBuyList.stream().mapToLong(dto -> {
+                try {
+                    long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                    long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                    return price * qty;
+                } catch (NumberFormatException e) {
+                    // 숫자 변환 실패 시 0 처리
+                    return 0L;
+                }
+            }).sum();
+
+            log.info("[INFO]미보유 종목 매수 후 예수금 총액: {}", cashBalance);
+            /// FOR TEST ///
+
             // 3-4. 미보유 종목이 매수되었는지 확인.
             // 5초 간격으로 10번 확인.
             boolean buyCompleted = waitForBuyCompletion(toBuyList, 10, 5000);
@@ -80,13 +100,28 @@ public class AutoTradeService {
         if(!StockBalanceResponseCheck(sbrDto)) return;
 
         holdingStocks = sbrDto.getOutput1();                                        // 미보유 매수 후 현재 보유 중인 종목 재확인.
-        cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+//        cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
 
         // 4-2. 추가 매수 필요 리스트 추출.
         List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, cashBalance);
 
         // 4-3. 추가 매수가 필요한 종목 주문.
         orderStocks(rebalanceBuyList);
+
+        /// FOR TEST ///
+        cashBalance = cashBalance - rebalanceBuyList.stream().mapToLong(dto -> {
+            try {
+                long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                return price * qty;
+            } catch (NumberFormatException e) {
+                // 숫자 변환 실패 시 0 처리
+                return 0L;
+            }
+        }).sum();
+
+        log.info("[INFO]리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
+        /// FOR TEST ///
 
         log.info("==========================");
         log.warn("[WARN]자동 매수 처리 완료.");
@@ -214,6 +249,7 @@ public class AutoTradeService {
             if (quantityToBuy > 0) {
                 resultList.add(StockDto.builder()
                         .pdno(p.getStockCode())
+                        .prdtName(p.getStockName())
                         .ordUnpr(String.valueOf(stockPrice))
                         .ordQty(String.valueOf(quantityToBuy))
                         .orderType(2)
@@ -361,6 +397,7 @@ public class AutoTradeService {
                 if (quantityToBuy > 0) {
                     resultList.add(StockDto.builder()
                             .pdno(stockCode)
+                            .prdtName(holding.getPrdtName())
                             .ordUnpr(String.valueOf(stockPrice))
                             .ordQty(String.valueOf(quantityToBuy))
                             .orderType(2)
