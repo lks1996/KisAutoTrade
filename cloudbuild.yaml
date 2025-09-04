@@ -1,0 +1,20 @@
+steps:
+  # 1. Gradle 빌드 (테스트 생략 가능)
+  - name: 'gcr.io/cloud-builders/gradle'
+    args: ['clean', 'build', '-x', 'test']
+    dir: '.'
+
+  # 2. Docker 이미지 빌드
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', '-t', 'asia-northeast3-docker.pkg.dev/lks-00/kis-trade-repo/kis-trade-app:latest', '.'
+    ]
+
+  # 3. Docker 이미지 푸시
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push', 'asia-northeast3-docker.pkg.dev/lks-00/kis-trade-repo/kis-trade-app:latest'
+    ]
+
+images:
+  - 'asia-northeast3-docker.pkg.dev/lks-00/kis-trade-repo/kis-trade-app:latest'
