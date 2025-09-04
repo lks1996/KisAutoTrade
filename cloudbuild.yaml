@@ -1,8 +1,7 @@
 options:
   logging: CLOUD_LOGGING_ONLY
-
 steps:
-  - name: 'gradle:8.0.2-jdk17'
+  - name: 'gradle:8.10-jdk17'
     entrypoint: gradle
     args: ['clean', 'build', '-x', 'test']
 
