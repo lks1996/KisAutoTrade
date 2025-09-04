@@ -15,6 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -102,6 +103,17 @@ public class DomesticStockService {
         log.debug(" response.getBody(): {}",  response.getBody());
         log.info("[DomesticService.getBalance succeed.]");
 
+        // 테스트 호출 시 호출 제한이 있음.
+        if(profile.equals("dev")){
+            try {
+                // 2초 대기
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Thread sleep interrupted", e);
+            }
+        }
+
         return response.getBody();
     }
 
@@ -146,7 +158,7 @@ public class DomesticStockService {
         if(profile.equals("dev")){
             try {
                 // 2초 대기
-                Thread.sleep(3000);
+                TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Thread sleep interrupted", e);
@@ -197,6 +209,7 @@ public class DomesticStockService {
         log.info("==========================================");
         log.info(" 주문타입: {}",  orderStock.getOrderType() == 1 ? "매도":"매수");
         log.info(" 종목코드: {}",  orderStock.getPdno());
+        log.info(" 종목이름: {}",  orderStock.getPrdtName());
         log.info(" 주문수량: {}",  orderStock.getOrdQty());
         log.info(" 주문단가: {}",  orderStock.getOrdUnpr());
         log.info("==========================================");
@@ -217,7 +230,7 @@ public class DomesticStockService {
         if(profile.equals("dev")){
             try {
                 // 2초 대기
-                Thread.sleep(3000);
+                TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Thread sleep interrupted", e);
@@ -294,7 +307,7 @@ public class DomesticStockService {
         if(profile.equals("dev")){
             try {
                 // 2초 대기
-                Thread.sleep(3000);
+                TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Thread sleep interrupted", e);

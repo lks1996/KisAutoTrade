@@ -8,9 +8,11 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BalanceOutput1Dto {
 
+    // 종목코드(6자리)
     @JsonProperty("pdno")
     private String pdno;
 
+    // 종목이름
     @JsonProperty("prdt_name")
     private String prdtName;
 

@@ -45,6 +45,8 @@ public class StockDto {
     int orderType;
     // 종목코드(6자리)
     String pdno = "";
+    // 종목이름
+    String prdtName = "";
     // 주문구분 ( 00 : KRX NXT SOR 지정가 , 01 : KRX SOR 시장가)
     String ordDvsn = "00";
     // 주문수량
