@@ -3,10 +3,6 @@ spring:
     name: "KisAutoTrade"
   profiles:
     active: ${PROFILE_ACTIVE:dev}  # 기본 실행 프로필
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
 server:
   port: 8080
@@ -25,6 +21,11 @@ spring:
   config:
     activate:
       on-profile: dev
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
 hantuOpenapi:
   appkey: ${DEV_HANTU_APPKEY}
   appsecret: ${DEV_HANTU_APPSECRET}
@@ -43,6 +44,11 @@ spring:
   config:
     activate:
       on-profile: prod
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
 hantuOpenapi:
   appkey: ${PROD_HANTU_APPKEY}
   appsecret: ${PROD_HANTU_APPSECRET}
