@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -18,6 +17,8 @@ public class TokenHolder {
 
     @Value("${spring.profiles.active}")
     private String profile;
+    @Value("${spring.vprofiles.active}")
+    private String vprofile;
 
     private Token cachedToken;
     private final ConnectionService connectionService;
@@ -41,8 +42,9 @@ public class TokenHolder {
             return cachedToken.getAccessToken();
         }
         log.info("profile@@@@@@@@@@@@@@@@@@@ {}", profile);
+        log.info("vprofile@@@@@@@@@@@@@@@@@@@ {}", vprofile);
         // 캐시에 저장되어 있는 토큰이 없는 경우 DB에서 가장 최근 토큰 조회
-        Optional<Token> optionalToken = tokenRepository.findTopByTypeOrderByIdDesc(profile);
+        Optional<Token> optionalToken = tokenRepository.findTopByTypeOrderByIdDesc(vprofile);
 
         // 발급된 토큰이 존재하고, 유효한 경우.
         if ( optionalToken.isPresent() && isValid(optionalToken.get()) ) {
@@ -55,7 +57,7 @@ public class TokenHolder {
         try {
             log.info("Token expired or not found, fetching new token...");
             String newToken = connectionService.getNewAccessToken();
-            cachedToken = tokenRepository.findTopByTypeOrderByIdDesc(profile).orElseThrow();
+            cachedToken = tokenRepository.findTopByTypeOrderByIdDesc(vprofile).orElseThrow();
             return newToken;
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

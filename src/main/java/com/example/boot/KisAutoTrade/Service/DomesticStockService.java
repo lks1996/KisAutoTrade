@@ -28,8 +28,8 @@ public class DomesticStockService {
         this.tokenHolder = tokenHolder;
     }
 
-    @Value("${spring.profiles.active}")
-    private String profile;
+    @Value("${spring.vprofiles.active}")
+    private String vprofile;
     @Value("${hantuOpenapi.appkey}")
     private String APP_KEY;
     @Value("${hantuOpenapi.appsecret}")
@@ -72,7 +72,7 @@ public class DomesticStockService {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = getHttpHeaders();
 
-        if(profile.equals("prod")) {
+        if(vprofile.equals("prod")) {
             headers.set("tr_id", "TTTC8434R");  // 실전용
         } else {
             headers.set("tr_id", "VTTC8434R");  // 모의용
@@ -104,7 +104,7 @@ public class DomesticStockService {
         log.info("[DomesticService.getBalance succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
-        if(profile.equals("dev")){
+        if(vprofile.equals("dev")){
             try {
                 // 2초 대기
                 TimeUnit.SECONDS.sleep(2);
@@ -127,7 +127,7 @@ public class DomesticStockService {
         HttpHeaders headers = getHttpHeaders();
 
         headers.set("custtype", "P");// 고객 타입 (B: 법인 , P: 개인)
-        if(profile.equals("prod")) {
+        if(vprofile.equals("prod")) {
             headers.set("tr_id", "FHKST01010100");  // 실전용
         } else {
             headers.set("tr_id", "FHKST01010100");  // 모의용
@@ -155,7 +155,7 @@ public class DomesticStockService {
         log.info("[DomesticService.getDomesticStockPrice succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
-        if(profile.equals("dev")){
+        if(vprofile.equals("dev")){
             try {
                 // 2초 대기
                 TimeUnit.SECONDS.sleep(2);
@@ -178,13 +178,13 @@ public class DomesticStockService {
         HttpHeaders headers = getHttpHeaders();
 
         headers.set("custtype", "P");// 고객 타입 (B: 법인 , P: 개인)
-        if(profile.equals("prod")) {
+        if(vprofile.equals("prod")) {
             if(orderStock.getOrderType() == 1) {
                 headers.set("tr_id", "TTTC0011U");  // 실전용(매도)
             } else if (orderStock.getOrderType() == 2) {
                 headers.set("tr_id", "TTTC0012U");  // 실전용(매수)
             }
-        } else if(profile.equals("dev")){
+        } else if(vprofile.equals("dev")){
             if(orderStock.getOrderType() == 1) {
                 headers.set("tr_id", "VTTC0011U");  // 모의용(매도)
             } else if (orderStock.getOrderType() == 2) {
@@ -227,7 +227,7 @@ public class DomesticStockService {
         log.info("[DomesticService.orderDomesticStockCash succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
-        if(profile.equals("dev")){
+        if(vprofile.equals("dev")){
             try {
                 // 2초 대기
                 TimeUnit.SECONDS.sleep(2);
@@ -249,9 +249,9 @@ public class DomesticStockService {
         HttpHeaders headers = getHttpHeaders();
 
         headers.set("custtype", "P");// 고객 타입 (B: 법인 , P: 개인)
-        if(profile.equals("prod")) {
+        if(vprofile.equals("prod")) {
             headers.set("tr_id", "TTTC0081R");  // 실전용(3개월 이내 기간)
-        } else if(profile.equals("dev")){
+        } else if(vprofile.equals("dev")){
             headers.set("tr_id", "VTTC0081R");  // 테스트 전용(3개월 이내 기간)
         }
 
@@ -304,7 +304,7 @@ public class DomesticStockService {
         log.info("[DomesticService.getDomesticDailyCcld succeed.]");
 
         // 테스트 호출 시 호출 제한이 있음.
-        if(profile.equals("dev")){
+        if(vprofile.equals("dev")){
             try {
                 // 2초 대기
                 TimeUnit.SECONDS.sleep(2);
@@ -326,8 +326,8 @@ public class DomesticStockService {
         ObjectMapper objectMapper = new ObjectMapper();
         HttpHeaders headers = getHttpHeaders();
 
-        if(profile.equals("prod")) {
-            log.error("Cannot get Order History because Current Profile is -> {}", profile);
+        if(vprofile.equals("prod")) {
+            log.error("Cannot get Order History because Current VProfile is -> {}", vprofile);
             return;
         }
 
