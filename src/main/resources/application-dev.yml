@@ -2,7 +2,7 @@ spring:
   application:
     name: "KisAutoTrade"
   profiles:
-    active: ${PROFILE_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE}
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
@@ -20,12 +20,13 @@ slack:
   webhookurl: ${SLACK_WEBHOOK_URL}
 
 hantuOpenapi:
-  appkey: ${PROD_HANTU_APPKEY}
-  appsecret: ${PROD_HANTU_APPSECRET}
-  domain: https://openapi.koreainvestment.com:9443 #실전 도메인
-  cano: ${PROD_CANO}
-  acntprdtcd: ${PROD_ACNTPRDTCD}
+  appkey: ${DEV_HANTU_APPKEY}
+  appsecret: ${DEV_HANTU_APPSECRET}
+  domain: https://openapivts.koreainvestment.com:29443 #모의 도메인
+  cano: ${DEV_CANO}
+  acntprdtcd: ${DEV_ACNTPRDTCD}
 
 googleSheetsapi:
+  credentialsFilePath: ./googleSheetsApiServiceKey.json
   spreadsheetId: ${SPREADSHEET_ID}
-  spreadsheetrange: prod_data!C3:G9
+  spreadsheetrange: dev_data!C3:G9
