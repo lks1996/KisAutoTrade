@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -27,10 +29,14 @@ public class SheetDataImportService {
     private String SHEET_RANGE;
 
     public Sheets getSheets() throws Exception {
-        File credentialsFile = new File(CREDENTIALS_FILE_PATH);
-
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsFile))
+        Path path = Paths.get(CREDENTIALS_FILE_PATH).toAbsolutePath();
+        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(path.toFile()))
                 .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
+
+//        File credentialsFile = new File(CREDENTIALS_FILE_PATH);
+//
+//        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsFile))
+//                .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
         HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
