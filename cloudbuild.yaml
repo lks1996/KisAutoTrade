@@ -7,7 +7,7 @@ steps:
 
   - name: 'gcr.io/cloud-builders/docker'
     args: [
-      'build', '-t', 'asia-northeast3-docker.pkg.dev/lks-00/kis-trade-repo/kis-auto-trade:latest', '.'
+      'build', '--no-cache', '-t', 'asia-northeast3-docker.pkg.dev/lks-00/kis-trade-repo/kis-auto-trade:latest', '.'
     ]
 
   - name: 'gcr.io/cloud-builders/docker'
