@@ -17,7 +17,7 @@ public class TokenHolder {
 
     @Value("${spring.profiles.active}")
     private String profile;
-    @Value("${spring.vprofiles.active}")
+    @Value("${vprofiles}")
     private String vprofile;
 
     private Token cachedToken;

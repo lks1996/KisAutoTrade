@@ -1,8 +1,6 @@
 spring:
   application:
     name: "KisAutoTrade"
-  vprofiles:
-    active: prod
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
@@ -15,6 +13,8 @@ logging:
   level:
     root: INFO
     com.example: DEBUG  # 필요 시 패키지 별 설정
+
+vprofiles: prod
 
 slack:
   webhookurl: ${SLACK_WEBHOOK_URL}

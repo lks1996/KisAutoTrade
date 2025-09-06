@@ -28,7 +28,7 @@ public class DomesticStockService {
         this.tokenHolder = tokenHolder;
     }
 
-    @Value("${spring.vprofiles.active}")
+    @Value("${vprofiles}")
     private String vprofile;
     @Value("${hantuOpenapi.appkey}")
     private String APP_KEY;

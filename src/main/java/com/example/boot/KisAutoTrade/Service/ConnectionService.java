@@ -21,7 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ConnectionService {
 
-    @Value("${spring.vprofiles.active}")
+    @Value("${vprofiles}")
     private String vprofile;
     @Value("${hantuOpenapi.appkey}")
     private String APP_KEY;
