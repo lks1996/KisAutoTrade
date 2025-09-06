@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 @Component
@@ -13,9 +14,7 @@ public class TokenMapper {
     public Token toToken(TokenRes tokenRes, String type) {
         return Token.builder()
                 .accessToken(tokenRes.accessToken())
-                .expiration(Date.from(tokenRes.accessTokenTokenExpired()
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()))
+                .expiration(Date.from(tokenRes.accessTokenTokenExpired().toInstant(ZoneOffset.UTC)))
                 .type(type)
                 .build();
     }
