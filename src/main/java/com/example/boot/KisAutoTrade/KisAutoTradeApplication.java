@@ -15,7 +15,6 @@ public class KisAutoTradeApplication implements CommandLineRunner {
 	}
 
 	public static void main(String[] args) {
-
 		SpringApplication.run(KisAutoTradeApplication.class, args);
 	}
 
