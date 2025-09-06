@@ -5,6 +5,9 @@ spring:
     active: dev
   vprofiles:
     active: dev
+  config:
+    activate:
+      on-profile: dev
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
