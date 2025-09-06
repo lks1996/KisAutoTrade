@@ -6,12 +6,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
-@SpringBootApplication(
-		exclude = {
-				org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-				org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class
-		}
-)
 public class KisAutoTradeApplication implements CommandLineRunner {
 
 	private final AutoTradeService autoTradeService;

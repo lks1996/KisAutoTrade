@@ -1,8 +1,6 @@
 spring:
   application:
     name: "KisAutoTrade"
-  profiles:
-    active: prod
   vprofiles:
     active: prod
   autoconfigure:
