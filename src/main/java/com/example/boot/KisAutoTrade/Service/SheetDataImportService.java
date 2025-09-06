@@ -29,8 +29,8 @@ public class SheetDataImportService {
     private String SHEET_RANGE;
 
     public Sheets getSheets() throws Exception {
-        Path path = Paths.get(CREDENTIALS_FILE_PATH).toAbsolutePath();
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(path.toFile()))
+        File credentialsFile = Paths.get(CREDENTIALS_FILE_PATH).toAbsolutePath().toFile();
+        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsFile))
                 .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
 //        File credentialsFile = new File(CREDENTIALS_FILE_PATH);
