@@ -17,6 +17,8 @@ public class FirestoreConfig {
 
     @Value("${googleSheetsapi.credentialsFilePath:}")
     private String CREDENTIALS_FILE_PATH;
+    @Value("${google.projectid}")
+    private String GOOGLE_PROJECT_ID;
 
     @Bean
     public Firestore firestore() throws IOException {
@@ -31,6 +33,7 @@ public class FirestoreConfig {
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(credentials)
+                .setProjectId(GOOGLE_PROJECT_ID)
                 .build();
 
         if (FirebaseApp.getApps().isEmpty()) {

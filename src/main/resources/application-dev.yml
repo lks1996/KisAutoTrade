@@ -26,6 +26,9 @@ hantuOpenapi:
   cano: ${DEV_CANO}
   acntprdtcd: ${DEV_ACNTPRDTCD}
 
+google:
+  projectid: ${GOOGLE_PROJECT_ID}
+
 googleSheetsapi:
 #  credentialsFilePath: .${CREDENTIAL_FILE_PATH}
   spreadsheetId: ${SPREADSHEET_ID}
