@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 public class SheetDataImportService {
 
-    @Value("${googleSheetsapi.credentialsFilePath}")
+    @Value("${googleSheetsapi.credentialsFilePath:}")
     private String CREDENTIALS_FILE_PATH;
     @Value("${googleSheetsapi.spreadsheetId}")
     private String SHEET_ID;
@@ -29,15 +29,14 @@ public class SheetDataImportService {
     private String SHEET_RANGE;
 
     public Sheets getSheets() throws Exception {
-        File credentialsFile = Paths.get(CREDENTIALS_FILE_PATH).toAbsolutePath().toFile();
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsFile))
-                .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
-//        File credentialsFile = new File(CREDENTIALS_FILE_PATH);
-//
-//        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsFile))
-//                .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
+        GoogleCredentials credentials;
 
+        if (CREDENTIALS_FILE_PATH != null && !CREDENTIALS_FILE_PATH.isBlank()) {
+            credentials = GoogleCredentials.fromStream(new FileInputStream(CREDENTIALS_FILE_PATH));
+        } else {
+            credentials = GoogleCredentials.getApplicationDefault();
+        }
         HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
         return new Sheets.Builder(

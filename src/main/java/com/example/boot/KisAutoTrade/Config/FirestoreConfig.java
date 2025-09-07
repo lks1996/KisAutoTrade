@@ -15,17 +15,22 @@ import java.io.IOException;
 @Configuration
 public class FirestoreConfig {
 
-    @Value("${googleSheetsapi.credentialsFilePath}")
+    @Value("${googleSheetsapi.credentialsFilePath:}")
     private String CREDENTIALS_FILE_PATH;
 
     @Bean
     public Firestore firestore() throws IOException {
 
-        FileInputStream serviceAccount =
-                new FileInputStream(CREDENTIALS_FILE_PATH);
+        GoogleCredentials credentials;
+
+        if (CREDENTIALS_FILE_PATH != null && !CREDENTIALS_FILE_PATH.isBlank()) {
+            credentials = GoogleCredentials.fromStream(new FileInputStream(CREDENTIALS_FILE_PATH));
+        } else {
+            credentials = GoogleCredentials.getApplicationDefault();
+        }
 
         FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setCredentials(credentials)
                 .build();
 
         if (FirebaseApp.getApps().isEmpty()) {
