@@ -27,6 +27,6 @@ hantuOpenapi:
   acntprdtcd: ${DEV_ACNTPRDTCD}
 
 googleSheetsapi:
-  credentialsFilePath: .${CREDENTIAL_FILE_PATH}
+#  credentialsFilePath: .${CREDENTIAL_FILE_PATH}
   spreadsheetId: ${SPREADSHEET_ID}
   spreadsheetrange: dev_data!C3:G9
