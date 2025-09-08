@@ -4,8 +4,7 @@ import com.example.boot.KisAutoTrade.DTO.TokenRes;
 import com.example.boot.KisAutoTrade.Entity.Token;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Date;
 
@@ -14,6 +13,7 @@ public class TokenMapper {
     public Token toToken(TokenRes tokenRes, String type) {
         return Token.builder()
                 .accessToken(tokenRes.accessToken())
+                .createDate(Date.from(Instant.now()))
                 .expiration(Date.from(tokenRes.accessTokenTokenExpired().toInstant(ZoneOffset.UTC)))
                 .type(type)
                 .build();
