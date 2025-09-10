@@ -8,6 +8,7 @@ import com.example.boot.KisAutoTrade.DTO.Response.StockPriceResponseDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.example.boot.KisAutoTrade.Common.Parser;
 import com.example.boot.KisAutoTrade.Common.Validator;
@@ -29,6 +30,9 @@ public class AutoTradeService {
         this.sheetDataImportService = sheetDataImportService;
     }
 
+    @Value("${vprofiles}")
+    private String vprofile;
+
     public void execute() throws Exception {
 
         /** 1. 구글 시트에서 목표 비중 가져오기 */
@@ -42,11 +46,13 @@ public class AutoTradeService {
         List<BalanceOutput1Dto> holdingStocks = sbrDto.getOutput1();                    // 보유 중인 종목 조회.
         long cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());  // 보유 중인 예수금 조회.
 
-        log.info("[INFO]실예수금 총액: {}", cashBalance);
+        log.warn("[WARN]실예수금 총액: {}", cashBalance);
 
         /// FOR TEST ///
-        cashBalance = 1000000;  // 보유 중인 예수금 조회.
-        log.info("[INFO]테스트 예수금 총액: {}", cashBalance);
+        if(vprofile.equals("dev")){
+            cashBalance = 1000000;  // 보유 중인 예수금 조회.
+            log.warn("[WARN]테스트 예수금 총액: {}", cashBalance);
+        }
         /// FOR TEST ///
 
         /** 3. 보유하고 있지 않은 종목이 있다면, 해당 종목을 먼저 구매함.(단, 보유 중인 종목은 지정된 비율만큼 이미 보유하고 있다고 가정.) */
@@ -71,18 +77,20 @@ public class AutoTradeService {
             orderStocks(toBuyList);
 
             /// FOR TEST ///
-            cashBalance = cashBalance - toBuyList.stream().mapToLong(dto -> {
-                try {
-                    long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
-                    long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
-                    return price * qty;
-                } catch (NumberFormatException e) {
-                    // 숫자 변환 실패 시 0 처리
-                    return 0L;
-                }
-            }).sum();
+            if(vprofile.equals("dev")) {
+                cashBalance = cashBalance - toBuyList.stream().mapToLong(dto -> {
+                    try {
+                        long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                        long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                        return price * qty;
+                    } catch (NumberFormatException e) {
+                        // 숫자 변환 실패 시 0 처리
+                        return 0L;
+                    }
+                }).sum();
 
-            log.info("[INFO]미보유 종목 매수 후 예수금 총액: {}", cashBalance);
+                log.warn("[WARN]미보유 종목 매수 후 예수금 총액: {}", cashBalance);
+            }
             /// FOR TEST ///
 
             // 3-4. 미보유 종목이 매수되었는지 확인.
@@ -109,18 +117,20 @@ public class AutoTradeService {
         orderStocks(rebalanceBuyList);
 
         /// FOR TEST ///
-        cashBalance = cashBalance - rebalanceBuyList.stream().mapToLong(dto -> {
-            try {
-                long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
-                long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
-                return price * qty;
-            } catch (NumberFormatException e) {
-                // 숫자 변환 실패 시 0 처리
-                return 0L;
-            }
-        }).sum();
+        if(vprofile.equals("dev")) {
+            cashBalance = cashBalance - rebalanceBuyList.stream().mapToLong(dto -> {
+                try {
+                    long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                    long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                    return price * qty;
+                } catch (NumberFormatException e) {
+                    // 숫자 변환 실패 시 0 처리
+                    return 0L;
+                }
+            }).sum();
 
-        log.info("[INFO]리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
+            log.warn("[WARN]리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
+        }
         /// FOR TEST ///
 
         log.info("==========================");
