@@ -5,6 +5,7 @@ import com.example.boot.KisAutoTrade.Entity.Token;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Date;
 
@@ -14,7 +15,7 @@ public class TokenMapper {
         return Token.builder()
                 .accessToken(tokenRes.accessToken())
                 .createDate(Date.from(Instant.now()))
-                .expiration(Date.from(tokenRes.accessTokenTokenExpired().toInstant(ZoneOffset.UTC)))
+                .expiration(Date.from(tokenRes.accessTokenTokenExpired().atZone(ZoneId.of("Asia/Seoul")).toInstant()))
                 .type(type)
                 .build();
     }
