@@ -108,7 +108,9 @@ public class AutoTradeService {
         if(!StockBalanceResponseCheck(sbrDto)) return;
 
         holdingStocks = sbrDto.getOutput1();                                        // 미보유 매수 후 현재 보유 중인 종목 재확인.
-//        cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+        if(vprofile.equals("prod")) {
+            cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+        }
 
         // 4-2. 추가 매수 필요 리스트 추출.
         List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, cashBalance);

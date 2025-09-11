@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 
 @Slf4j
@@ -42,8 +41,9 @@ public class TokenHolder {
             log.info("Cached Token is valid.");
             return cachedToken.getAccessToken();
         }
-        log.info("profile@@@@@@@@@@@@@@@@@@@ {}", profile);
-        log.info("vprofile@@@@@@@@@@@@@@@@@@@ {}", vprofile);
+        log.warn("Current profile -->> {}", profile);
+        log.warn("Current vprofile -->> {}", vprofile);
+
         // 캐시에 저장되어 있는 토큰이 없는 경우 DB에서 가장 최근 토큰 조회
         Optional<Token> optionalToken = tokenRepository.findTopByTypeOrderByIdDesc(vprofile);
 

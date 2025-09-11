@@ -6,7 +6,6 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
-import org.hibernate.sql.exec.ExecutionException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
