@@ -76,22 +76,9 @@ public class AutoTradeService {
             // 3-3. 추가 매수가 필요한 종목 주문.
             orderStocks(toBuyList);
 
-            /// FOR TEST ///
-            if(vprofile.equals("dev")) {
-                cashBalance = cashBalance - toBuyList.stream().mapToLong(dto -> {
-                    try {
-                        long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
-                        long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
-                        return price * qty;
-                    } catch (NumberFormatException e) {
-                        // 숫자 변환 실패 시 0 처리
-                        return 0L;
-                    }
-                }).sum();
-
-                log.warn("[WARN]미보유 종목 매수 후 예수금 총액: {}", cashBalance);
-            }
-            /// FOR TEST ///
+            // 3-4. 잔존 예상 예수금 계산.
+            cashBalance = computeEstimateRestCashBalance(cashBalance, toBuyList);
+            log.warn("[WARN]미보유 종목 매수 후 예상 예수금 총액: {}", cashBalance);
 
             // 3-4. 미보유 종목이 매수되었는지 확인.
             // 5초 간격으로 10번 확인.
@@ -109,7 +96,7 @@ public class AutoTradeService {
 
         holdingStocks = sbrDto.getOutput1();                                        // 미보유 매수 후 현재 보유 중인 종목 재확인.
         if(vprofile.equals("prod")) {
-            cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 예수금 확인.
+            cashBalance = Long.parseLong(sbrDto.getOutput2().get(0).getDncaTotAmt());   // 미보유 매수 후 남은 실제 예수금 확인.
         }
 
         // 4-2. 추가 매수 필요 리스트 추출.
@@ -118,22 +105,9 @@ public class AutoTradeService {
         // 4-3. 추가 매수가 필요한 종목 주문.
         orderStocks(rebalanceBuyList);
 
-        /// FOR TEST ///
-        if(vprofile.equals("dev")) {
-            cashBalance = cashBalance - rebalanceBuyList.stream().mapToLong(dto -> {
-                try {
-                    long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
-                    long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
-                    return price * qty;
-                } catch (NumberFormatException e) {
-                    // 숫자 변환 실패 시 0 처리
-                    return 0L;
-                }
-            }).sum();
-
-            log.warn("[WARN]리밸런싱 종목 매수 후 예수금 총액: {}", cashBalance);
-        }
-        /// FOR TEST ///
+        // 4-4. 잔존 예상 예수금 계산.
+        cashBalance = computeEstimateRestCashBalance(cashBalance, rebalanceBuyList);
+        log.warn("[WARN]리밸런싱 종목 매수 후 예상 예수금 총액: {}", cashBalance);
 
         log.info("==========================");
         log.warn("[WARN]자동 매수 처리 완료.");
@@ -436,5 +410,18 @@ public class AutoTradeService {
                 log.warn("[WARN] Invalid order skipped: {}", order);
             }
         }
+    }
+
+    private long computeEstimateRestCashBalance(long cashBalance, List<StockDto> orders) throws Exception {
+        return cashBalance - orders.stream().mapToLong(dto -> {
+            try {
+                long price = Long.parseLong(dto.getOrdUnpr()); // 매수 단가
+                long qty = Long.parseLong(dto.getOrdQty());    // 매수 수량
+                return price * qty;
+            } catch (NumberFormatException e) {
+                // 숫자 변환 실패 시 0 처리
+                return 0L;
+            }
+        }).sum();
     }
 }
