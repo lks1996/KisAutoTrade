@@ -73,7 +73,7 @@ public class AutoTradeService {
             long portfolioTotal = getPortfolioTotal(holdingStocks,  cashBalance);
 
             // 3-2. 미보유 종목 매수 필요 리스트 추출.
-            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, portfolioTotal, cashBalance, requiredCashLogs);
+            List<StockDto> toBuyList = calculateUnholdingBuys(unholdingStockList, portfolioTotal, cashBalance);
 
             // 3-3. 추가 매수가 필요한 종목 주문.
             orderStocks(toBuyList);
@@ -102,7 +102,7 @@ public class AutoTradeService {
         }
 
         // 4-2. 추가 매수 필요 리스트 추출.
-        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, cashBalance, requiredCashLogs);
+        List<StockDto> rebalanceBuyList = calculateRebalanceBuys(holdingStocks, sheetList, cashBalance);
 
         // 4-3. 추가 매수가 필요한 종목 주문.
         orderStocks(rebalanceBuyList);
@@ -113,14 +113,6 @@ public class AutoTradeService {
 
         log.info("==========================");
         log.warn("[WARN]자동 매수 처리 완료.");
-        // [추가] 마지막에 필요한 예수금 요약 리포트 출력
-        if (!requiredCashLogs.isEmpty()) {
-            log.warn("=== [Report] 매수 스킵 종목 분석 (1주 매수 기준) ===");
-            for (String msg : requiredCashLogs) {
-                log.warn(msg);
-            }
-            log.warn("==================================================");
-        }
         log.info("==========================");
     }
 
@@ -212,11 +204,10 @@ public class AutoTradeService {
      *
      * @param unholdingStockList 미보유 종목 목록
      * @param portfolioTotal     총 보유 종목 평가금 + 현금 예수금
-     * @param requiredCashLogs
      * @return resultList 매수 대상 종목 리스트
      * @throws Exception
      */
-    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, long portfolioTotal, long cashBalance, List<String> requiredCashLogs) throws Exception {
+    private List<StockDto> calculateUnholdingBuys(List<SheetDto> unholdingStockList, long portfolioTotal, long cashBalance) throws Exception {
 
         List<StockDto> resultList = new ArrayList<>();
         List<Map<String, Object>> resultLogList = new ArrayList<>();
@@ -245,18 +236,6 @@ public class AutoTradeService {
                 // 할당된 금액이 있지만 1주 가격보다 낮아서 못 사는 경우
                 log.warn("[SKIP] 미보유 매수 보류 - {}: 할당금액 {}원 < 현재가 {}원 (1주 매수 불가)",
                         p.getStockName(), needToBuyAmount, stockPrice);
-
-                // [추가] 2. 1주 매수에 필요한 추가 예수금 수학적 역산
-                long requiredTotalAsset = (long) Math.ceil((stockPrice * 100.0) / p.getTargetRatio());
-                long extraCashForRatio = requiredTotalAsset - portfolioTotal;
-                long extraCashForPrice = stockPrice - cashBalance;
-
-                // 비율 팽창을 위한 금액과, 순수 1주 가격을 위한 금액 중 큰 값을 선택
-                long needExtraCash = Math.max(extraCashForRatio, extraCashForPrice);
-                needExtraCash = Math.max(needExtraCash, 0); // 음수 방지
-
-                requiredCashLogs.add(String.format("미보유 [%s]: 1주(%d원) 매수를 위해 약 %,d원의 추가 예수금 입금이 필요합니다.",
-                        p.getStockName(), stockPrice, needExtraCash));
             }
 
             // 구매 필요 수량이 있는 경우 리스트에 추가
@@ -362,11 +341,10 @@ public class AutoTradeService {
      * @param holdingStocks    현재 보유 종목 목록
      * @param sheetList        포트폴리오 목표 비중 목록
      * @param cashBalance      현재 예수금
-     * @param requiredCashLogs
      * @return resultList 매수 대상 종목 리스트
      * @throws Exception
      */
-    private List<StockDto> calculateRebalanceBuys(List<BalanceOutput1Dto> holdingStocks, List<SheetDto> sheetList, long cashBalance, List<String> requiredCashLogs) throws Exception {
+    private List<StockDto> calculateRebalanceBuys(List<BalanceOutput1Dto> holdingStocks, List<SheetDto> sheetList, long cashBalance) throws Exception {
         // 1. 총 평가 금액 계산. (보유 종목 평가금 + 예수금)
         long totalEvalAmount = getPortfolioTotal(holdingStocks, cashBalance);
 
@@ -430,18 +408,6 @@ public class AutoTradeService {
                     // 비중이 부족하지만, 부족 금액이 1주 가격보다 낮아서 못 사는 경우
                     log.warn("[SKIP] 리밸런싱 보류 - {}: 부족금액 {}원 < 현재가 {}원 (1주 매수 불가)",
                             holding.getPrdtName(), shortageAmount, stockPrice);
-
-                    // 1주 매수에 필요한 추가 예수금 역산
-                    // (현재가 + 보유금액)이 목표 비율을 충족하도록 총 자산을 팽창.
-                    long requiredTotalAsset = (long) Math.ceil(((stockPrice + evalAmt) * 100.0) / targetRatio);
-                    long extraCashForRatio = requiredTotalAsset - totalEvalAmount;
-                    long extraCashForPrice = stockPrice - cashBalance;
-
-                    long needExtraCash = Math.max(extraCashForRatio, extraCashForPrice);
-                    needExtraCash = Math.max(needExtraCash, 0);
-
-                    requiredCashLogs.add(String.format("리밸런싱 [%s]: 1주(%d원) 추가 매수를 위해 약 %,d원의 추가 예수금 입금이 필요합니다.",
-                            holding.getPrdtName(), stockPrice, needExtraCash));
                 }
             }
         }
